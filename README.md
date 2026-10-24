@@ -13,7 +13,7 @@ Tested on LMS 9.x against **HQPlayer Embedded 6** feeding an NAA endpoint.
 ### What's new in 1.1.0
 
 - **A bit-perfect mode**, in *Player settings → HQPlayer*. While it is on there is no ReplayGain, no bitrate limit and no MP3 conversion; Lyrion's volume is set to fixed and HQPlayer is set once to 0 dB, or to its own maximum volume if that is lower. An optional *Native files only* switch skips anything Lyrion would convert (ALAC/AAC/M4A) or relay (Deezer, radio).
-- **A ✓/⚠ list** of every Lyrion setting that could alter the stream.
+- **A ✓/⚠ list** of every Lyrion setting that could alter the stream, and (1.1.1) whether Lyrion touched the last track played.
 - **The ReplayGain setting is visible** on the player's Audio page.
 - **The connection status** of each HQPlayer in *Settings → Plugins → HQPlayer Bridge*.
 
@@ -240,10 +240,11 @@ HQPlayer, read from where Lyrion itself reads it - ✓ when it changes nothing,
 | **ReplayGain** | Bit-perfect on (unity sent), or ReplayGain off in Lyrion - HQPlayer may then still read the file's tags itself, if its own album-gain option is on | ReplayGain on: Lyrion's gain is sent and changes the level |
 | **Bitrate limit** | None: nothing is turned into MP3 | A limit in kbps: anything going through Lyrion's own stream (Deezer, radio) is transcoded to MP3 to fit it. Library files and direct Qobuz/Tidal are never affected |
 | **Volume control** | Fixed: Lyrion's slider does not move HQPlayer | Variable: the slider sets HQPlayer's volume. The bytes still arrive untouched - HQPlayer applies the level in its own processing - but the level is not the one you may expect |
+| **Last track** | The original file, or a stream HQPlayer fetched straight from the service - or a track *Native files only* skipped, so nothing converted reached HQPlayer. A neutral – means nothing has played since HQPlayer connected | Lyrion transcoded it (ALAC, AAC, M4A) or relayed it through its own stream (Deezer, radio) |
 
-Below the checks, the page shows this player's connection status, including
-the **route of the playing track** (red when Lyrion converts or relays it) and
-the **gain sent with the last track**. **What this does not change:** HQPlayer's own
+The first three are settings; the last is what actually happened to the track
+playing, or last played. Below the checks, the page shows this player's
+connection status, including the **gain sent with the last track**. **What this does not change:** HQPlayer's own
 processing - upsampling, filters, modulation - which is the point of HQPlayer.
 
 ---

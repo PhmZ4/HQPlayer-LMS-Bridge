@@ -50,7 +50,7 @@ __PACKAGE__->mk_accessor( 'rw', qw(
     hqNext hqArmNext hqTrackNo hqTrackSerial hqStaleRun hqStartedAt hqFailRun
     hqItems hqSkipPending hqUnstopped
     hqArt
-    hqGainSent
+    hqGainSent hqRefusedTier
 ) );
 
 my $log        = logger('plugin.hqplayerbridge');
@@ -1387,6 +1387,11 @@ sub _startTrack {
     # the previous one playing under it.
     if ( $self->_refuses( $self->hqTier || 0 ) ) {
 
+        # The tier of a track that was REFUSED, so the player page can say
+        # nothing converted reached HQPlayer - hqTier now describes a track
+        # that never played.
+        $self->hqRefusedTier( $self->hqTier );
+
         $log->warn( $self->name . sprintf(
             ': bit-perfect, native only - refusing a tier %d track (LMS would %s it): %s',
             $self->hqTier, ( $self->hqTier == 3 ? 'transcode' : 'relay' ), $url ) );
@@ -1402,6 +1407,9 @@ sub _startTrack {
 
         return 1;
     }
+
+    # A real load: whatever was refused before is history.
+    $self->hqRefusedTier(undef);
 
     $self->_queueTrack( $url, $song, $seek );
 
