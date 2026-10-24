@@ -282,7 +282,7 @@ def convert_body(md_lines):
 
         if s.startswith("### "):
             para_flush(para)
-            out.append("<h3>%s</h3>" % inline(s[4:].strip()))
+            out.append('<h3 id="%s">%s</h3>' % (slug(s[4:].strip()), inline(s[4:].strip())))
             i += 1
             continue
 
