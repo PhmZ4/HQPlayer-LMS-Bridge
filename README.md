@@ -10,16 +10,14 @@ Tested on LMS 9.x against **HQPlayer Embedded 6** feeding an NAA endpoint.
 
 > **This is PhmZ4's fork** of [SimonArnold002/LMS-HQPlayer-Bridge](https://github.com/SimonArnold002/LMS-HQPlayer-Bridge). Version **1.1.0** adds a [bit-perfect mode](#bit-perfect-mode), shows the **ReplayGain** setting on the player's Audio page, and puts the [connection status](#connection-status) on the plugin's settings page. Everything else works as in the original. See [CHANGELOG.md](CHANGELOG.md).
 
-### En bref (français)
+### What's new in 1.1.0
 
-Ce fork ajoute, en version 1.1.0 :
+- **A bit-perfect mode**, in *Player settings → HQPlayer*. While it is on there is no ReplayGain, no bitrate limit and no MP3 conversion; Lyrion's volume is set to fixed and HQPlayer is set once to 0 dB, or to its own maximum volume if that is lower. An optional *Native files only* switch skips anything Lyrion would convert (ALAC/AAC/M4A) or relay (Deezer, radio).
+- **A ✓/⚠ list** of every Lyrion setting that could alter the stream.
+- **The ReplayGain setting is visible** on the player's Audio page.
+- **The connection status** of each HQPlayer in *Settings → Plugins → HQPlayer Bridge*.
 
-- **Un mode bit-perfect**, dans *Réglages du lecteur → HQPlayer*. Une fois activé, ni gain ReplayGain, ni limite de débit, ni conversion MP3 ; le volume de Lyrion passe en fixe et HQPlayer est réglé une fois à 0 dB, ou à son volume maximum s'il est plus bas. Une option *Fichiers natifs uniquement* ignore ce que Lyrion convertirait (ALAC/AAC/M4A) ou relaierait (Deezer, radio).
-- **Une liste ✓/⚠** de chaque réglage de Lyrion qui pourrait modifier le flux.
-- **Le réglage ReplayGain visible** dans la page Audio du lecteur.
-- **L'état de la connexion** de chaque HQPlayer dans *Réglages → Plugins → HQPlayer Bridge*.
-
-Toutes les pages du plugin sont traduites en français.
+Every page of the plugin is also available in French.
 
 ---
 
