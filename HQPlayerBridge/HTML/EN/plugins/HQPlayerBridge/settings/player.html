@@ -1,0 +1,49 @@
+[% PROCESS settings/header.html %]
+
+[%# THE PLAYER'S "HQPlayer" PAGE (1.1.0) - see PlayerSettings.pm.
+    hqp_player_form: the sentinel the real form always posts, so a partial
+    POST changes nothing. Both switches are RADIO GROUPS with exactly one
+    option checked in every state - hqp_bp / hqp_native are decided in Perl,
+    never matched against a stored value here. No polling: the status is a
+    snapshot drawn at load, with a link to the live view. %]
+<input type="hidden" name="hqp_player_form" value="1" />
+
+[% WRAPPER setting title="PLUGIN_HQPLAYER_BP_TITLE" desc="PLUGIN_HQPLAYER_BP_DESC" %]
+<div>
+  <label><input type="radio" name="pref_bitperfect" value="1" [% IF hqp_bp %]checked="checked"[% END %]> [% 'PLUGIN_HQPLAYER_BP_ON' | string %]</label><br>
+  <label><input type="radio" name="pref_bitperfect" value="0" [% IF !hqp_bp %]checked="checked"[% END %]> [% 'PLUGIN_HQPLAYER_BP_OFF' | string %]</label>
+</div>
+[% END %]
+
+[% WRAPPER setting title="PLUGIN_HQPLAYER_NATIVE_TITLE" desc="PLUGIN_HQPLAYER_NATIVE_DESC" %]
+<div>
+  <label><input type="radio" name="pref_nativeonly" value="1" [% IF hqp_native %]checked="checked"[% END %]> [% 'PLUGIN_HQPLAYER_NATIVE_ON' | string %]</label><br>
+  <label><input type="radio" name="pref_nativeonly" value="0" [% IF !hqp_native %]checked="checked"[% END %]> [% 'PLUGIN_HQPLAYER_NATIVE_OFF' | string %]</label>
+</div>
+[% END %]
+
+[% WRAPPER setting title="PLUGIN_HQPLAYER_BP_CHECKS" desc="PLUGIN_HQPLAYER_BP_CHECKS_DESC" %]
+<div>
+[% FOREACH c IN hqp_checks %]
+  <div style="margin:2px 0;"><span style="font-weight:bold;color:[% IF c.ok %]#2e7d32[% ELSE %]#c62828[% END %];">[% IF c.ok %]&#10003;[% ELSE %]&#9888;[% END %]</span> [% c.text | html %]</div>
+[% END %]
+</div>
+[% END %]
+
+[% WRAPPER setting title="PLUGIN_HQPLAYER_STATUS_TITLE" desc="PLUGIN_HQPLAYER_STATUS_SNAPSHOT" %]
+<div>
+[% IF hqp_status.size %]
+[% FOREACH l IN hqp_status %]
+  <div style="margin:2px 0;"><span style="opacity:.75;">[% l.label | html %] :</span> <span style="[% IF l.warn %]color:#c62828;font-weight:bold;[% END %]">[% l.value | html %]</span></div>
+[% END %]
+[% ELSE %]
+  <div>[% 'PLUGIN_HQPLAYER_DISCONNECTED' | string %]</div>
+[% END %]
+  <div style="margin-top:6px;"><a href="/hqplive" target="_blank">[% 'PLUGIN_HQPLAYER_LIVE_TITLE' | string %]</a></div>
+</div>
+[% END %]
+
+[% WRAPPER setting title="PLUGIN_HQPLAYER_BP_HQP_TITLE" desc="PLUGIN_HQPLAYER_BP_HQP_DESC" %]
+[% END %]
+
+[% PROCESS settings/footer.html %]

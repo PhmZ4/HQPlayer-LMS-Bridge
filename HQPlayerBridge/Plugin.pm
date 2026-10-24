@@ -141,7 +141,21 @@ sub initPlugin {
     if (main::WEBUI) {
         require Plugins::HQPlayerBridge::Settings;
         Plugins::HQPlayerBridge::Settings->new;
+
+        # The per-player "HQPlayer" page (1.1.0): bit-perfect mode and the
+        # signal path, listed only for our own players - see validFor.
+        require Plugins::HQPlayerBridge::PlayerSettings;
+        Plugins::HQPlayerBridge::PlayerSettings->new;
+
+        # Both pages draw their connection status from here, handed in rather
+        # than called - neither page module calls into Plugin.pm.
+        Plugins::HQPlayerBridge::Settings::setStatusSource( \&statusRows );
+        Plugins::HQPlayerBridge::PlayerSettings::setStatusSource( \&statusRows );
     }
+
+    # The bit-perfect switch takes effect on SAVE - from the player page or a
+    # `pref` command alike - so the effects live on the change, not the page.
+    $prefs->setChange( \&_bitPerfectChanged, 'bitperfect' );
 
     # A saved settings page - or a `pref` command - takes effect AT ONCE: a
     # removed address loses its player now, not at the next round.
@@ -245,6 +259,23 @@ sub _table {
 # first call would see a half-saved page - the switch flipped but the box not
 # yet written, or the other way round. Applied one event-loop turn later
 # instead, once, when both are stored.
+# A client pref's change handler is called ($pref, $new, $client, $old).
+#
+# ONLY A REAL FLIP ACTS. LMS calls this whenever the stored value changes, and
+# undef -> 0 is a change: the first save of a page with the switch left off
+# would otherwise run the OFF branch, and "restore" a volume control that was
+# never saved - overwriting a fixed volume the user chose themselves.
+sub _bitPerfectChanged {
+    my ( $pref, $new, $client, $old ) = @_;
+
+    return unless $client && $client->can('applyBitPerfect');
+    return if ( $new ? 1 : 0 ) == ( $old ? 1 : 0 );
+
+    $client->applyBitPerfect( $new ? 1 : 0 );
+
+    return;
+}
+
 sub _settingsChanged {
     Slim::Utils::Timers::killTimers( undef, \&_applySettings );
     Slim::Utils::Timers::setTimer( undef, Time::HiRes::time(), \&_applySettings );
@@ -400,6 +431,22 @@ sub shutdownPlugin {
 # Exposed so the tests can stage a registry; the feed and the query read it
 # directly.
 sub bridges { return \%bridges }
+
+# THE CONNECTION STATUS, for the two settings pages (1.1.0): one row per
+# HQPlayer, its player id, and the very signalPathFor() hash the Apps feed and
+# the live view draw - so no surface formats a fact of its own. Plus what the
+# bridge is still waiting for, in waitingText's own words.
+sub statusRows {
+    my $client = shift;
+
+    my @rows = map { {
+        name     => $bridges{$_}->{name},
+        playerid => $bridges{$_}->{client} ? $bridges{$_}->{client}->id : undef,
+        path     => signalPathFor( $client, $bridges{$_} ),
+    } } grep { $bridges{$_} } sort keys %bridges;
+
+    return { rows => \@rows, waiting => waitingText($client) };
+}
 
 # ---------------------------------------------------------------------------
 # The Material/Apps feed.  READ-ONLY, and deliberately shallow: a row that opens
@@ -770,7 +817,8 @@ sub _signalPathQuery {
         $request->addResultLoop( 'bridges_loop', $i, 'playerid', $b->{client}->id )
             if $b->{client};
 
-        for my $k (qw( connected up source output filter shaper speed tier )) {
+        for my $k (qw( connected up source output filter shaper speed tier
+                       bitperfect gain converted )) {
             $request->addResultLoop( 'bridges_loop', $i, $k, $p->{$k} ) if defined $p->{$k};
         }
 
@@ -880,6 +928,25 @@ sub signalPathFor {
         : $tier == 3 ? 'PLUGIN_HQPLAYER_TIER3'
         : $tier == 5 ? 'PLUGIN_HQPLAYER_TIER5'
         :              'PLUGIN_HQPLAYER_TIER4' ) if $tier;
+
+    # BIT-PERFECT (1.1.0). The mode, the gain the last item handed over
+    # actually carried, and whether LMS touched the playing track's bytes -
+    # the three facts the mode is there to guarantee, shown rather than
+    # promised.
+    my $bp = $c->can('bitPerfect') ? $c->bitPerfect : 0;
+
+    $out{bitperfect} = cstring( $client,
+          !$bp              ? 'PLUGIN_HQPLAYER_BP_OFF'
+        : $c->nativeOnly    ? 'PLUGIN_HQPLAYER_BP_ON_NATIVE'
+        :                     'PLUGIN_HQPLAYER_BP_ON' );
+
+    my $g = $c->can('hqGainSent') ? $c->hqGainSent : undef;
+    $out{gain} = defined $g
+        ? sprintf( '%+.2f dB', $g ) . ( $bp ? ' (' . cstring( $client, 'PLUGIN_HQPLAYER_BP_UNITY' ) . ')' : '' )
+        : cstring( $client, 'PLUGIN_HQPLAYER_GAIN_NONE' )
+        if $tier;
+
+    $out{converted} = Plugins::HQPlayerBridge::Player::tierConverts($tier) if $tier;
 
     return \%out;
 }

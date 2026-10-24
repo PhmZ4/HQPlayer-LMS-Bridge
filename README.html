@@ -116,7 +116,7 @@
   <h1>HQPlayer Bridge — LMS Plugin</h1>
   <p class="tagline">A plugin for <strong>Lyrion Music Server</strong> that presents each <strong>HQPlayer</strong> instance on your network as a native LMS player. Play to it, pause, seek, set its volume and see its artwork from Material or any control point, while HQPlayer does the upsampling, filtering and modulation exactly as it always has.</p>
   <div class="badges">
-    <span class="badge accent">v1.0.40</span>
+    <span class="badge accent">v1.1.0</span>
     <span class="badge">LMS 8.0.0+</span>
     <span class="badge">HQPlayer Embedded 6</span>
     <span class="badge">No extra audio hop</span>
@@ -145,6 +145,8 @@
 <div class="card"><h4>Skip back from HQPlayer</h4><p>Skipping back to an earlier track in HQPlayer's own playlist while it plays moves LMS to that track too</p><span class="needs">Needs: nothing</span></div>
 <div class="card"><h4>Stable player identity</h4><p>Prefs and playlist survive HQPlayer changing IP address</p><span class="needs">Needs: nothing</span></div>
 <div class="card"><h4>Live view</h4><p>A page of its own: what's playing, transport, volume and the signal path, updating every second in your Material theme</p><span class="needs">Needs: nothing</span></div>
+<div class="card"><h4>Bit-perfect mode</h4><p>One switch per player: no ReplayGain, no bitrate limit, Lyrion volume fixed, HQPlayer at 0 dB - and optionally native files only. See <a href="#bit-perfect-mode">Bit-perfect mode</a></p><span class="needs">Needs: nothing</span></div>
+<div class="card"><h4>Connection status</h4><p>Each HQPlayer's link, output mode, filter, shaper and route, on the plugin's settings page</p><span class="needs">Needs: nothing</span></div>
 <div class="card"><h4>Restart HQPlayer from LMS</h4><p>One tap in Apps restarts HQPlayer, with your saved settings, e.g. after power-cycling your NAA endpoint</p><span class="needs">Needs: The optional restart helper on the HQPlayer machine, which needs <strong>Python 3.7+</strong> there</span></div>
 </div>
 </section>
@@ -252,6 +254,24 @@ sudo systemctl restart lyrionmusicserver</code></pre>
 <tr><td>service</td><td><code>sudo ./install.sh --system --uninstall</code></td></tr>
 </tbody></table>
 <p>This stops the helper and removes it from startup. Your config folder (above) is left in place; delete it if you won't reinstall. The Restart row disappears from Apps when LMS next restarts.</p>
+</section>
+<section id="bit-perfect-mode">
+<h2>Bit-perfect mode</h2>
+<p>Open <strong>Player settings → HQPlayer</strong> for an HQPlayer player (in Material: the player's settings, then the HQPlayer page). Set <strong>Bit-perfect mode</strong> to <strong>On</strong> and save. While it is on, what leaves Lyrion for HQPlayer is the source, unaltered:</p>
+<ul>
+<li><strong>No ReplayGain.</strong> A unity gain is sent with every track. That overrides the
+</li></ul>
+<p>file's own tags, so HQPlayer does not apply one from them either.</p>
+<ul>
+<li><strong>No bitrate limit.</strong> Lyrion's limit is held at none, so nothing is ever
+</li></ul>
+<p>turned into MP3 on the way.</p>
+<ul>
+<li><strong>Lyrion's volume is fixed.</strong> The slider no longer moves HQPlayer. Switching
+</li></ul>
+<p>the mode on sets HQPlayer's volume to 0 dB once; HQPlayer's own volume, and the endpoint's knob, stay yours to change afterwards. Switching the mode off puts Lyrion's volume control back as it was.</p>
+<p><strong>Native files only</strong> (a second switch, used only with bit-perfect on) skips anything Lyrion would convert or relay: ALAC, AAC and M4A (transcoded) and Deezer or radio (relayed through Lyrion's stream). Three skipped in a row stop the player. Left off, those still play, and the page shows their route in red.</p>
+<p>The page also lists each Lyrion setting that could change the stream, with a warning sign on any that does. <strong>What this does not change:</strong> HQPlayer's own processing - upsampling, filters, modulation - which is the point of HQPlayer.</p>
 </section>
 <section id="how-your-music-reaches-hqplayer">
 <h2>How your music reaches HQPlayer</h2>

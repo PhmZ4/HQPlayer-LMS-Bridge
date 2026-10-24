@@ -260,6 +260,50 @@ sub _check {
 
 sub _deadline { $_[1]->() }
 
+# ---------------------------------------------------------------------------
+# THE CONNECTION STATUS (1.1.0) - which HQPlayers there are and how each is
+# linked, on the plugin's own settings page.
+#
+# A SNAPSHOT AT PAGE LOAD, NOT A POLL. This page used to poll itself and never
+# updated inside Material, and the fault was never found (Live.pm's header).
+# A server-rendered block cannot have that fault: it is right when drawn, and
+# the page links to the live view for anything that has to tick.
+#
+# The rows come from Plugin.pm through setStatusSource, handed in at init -
+# this module still calls nothing in Plugin.pm (see the header).
+# ---------------------------------------------------------------------------
+my $statusSource;
+
+sub setStatusSource { $statusSource = $_[-1]; return }
+
+# One signalPathFor() hash -> the label/value rows both pages draw. Values are
+# already localised there; only the labels are looked up here. A key absent
+# from the hash is a row not drawn, never a label with nothing after it.
+sub statusLines {
+    my $p = shift || {};
+    my $s = sub { Slim::Utils::Strings::string(shift) };
+
+    my @rows;
+    my $row = sub {
+        my ( $label, $key, $warn ) = @_;
+        push @rows, { label => $s->($label), value => $p->{$key}, warn => $warn ? 1 : 0 }
+            if defined $p->{$key} && $p->{$key} ne '';
+    };
+
+    $row->( 'PLUGIN_HQPLAYER_STATUS',       'connected', !$p->{up} );
+    $row->( 'PLUGIN_HQPLAYER_MODE',         'mode' );
+    $row->( 'PLUGIN_HQPLAYER_FILTER',       'filter' );
+    $row->( 'PLUGIN_HQPLAYER_SHAPER',       'shaper' );
+    $row->( 'PLUGIN_HQPLAYER_OUTPUT',       'transport' );
+    $row->( 'PLUGIN_HQPLAYER_SOURCE',       'source' );
+    $row->( 'PLUGIN_HQPLAYER_OUTFORMAT',    'output' );
+    $row->( 'PLUGIN_HQPLAYER_ROUTE',        'tier', $p->{converted} );
+    $row->( 'PLUGIN_HQPLAYER_GAIN',         'gain' );
+    $row->( 'PLUGIN_HQPLAYER_BP_TITLE',     'bitperfect' );
+
+    return \@rows;
+}
+
 # After the save, before the page is drawn - so a saved page shows what was
 # SAVED (built in handler() it would show the old values). A refused save
 # shows what was TYPED, with the reason above it, so nothing has to be typed
@@ -296,6 +340,18 @@ sub beforeRender {
     # those from the player (Addresses::held) and asks nothing, so the line
     # leaves them out as well.
     $params->{hqp_held} = join ', ', @{ Plugins::HQPlayerBridge::Addresses::heldAll() };
+
+    # The connection status - see statusLines. Never allowed to break the
+    # page: a source that dies leaves the block out, the settings still work.
+    my $st = $statusSource ? eval { $statusSource->(undef) } : undef;
+
+    $params->{hqp_players} = [ map { {
+        name  => $_->{name} // 'HQPlayer',
+        lines => statusLines( $_->{path} ),
+    } } @{ ( $st || {} )->{rows} || [] } ];
+
+    $params->{hqp_waiting} = ( $st || {} )->{waiting} // '';
+    $params->{hqp_status}  = $st ? 1 : 0;
 
     return;
 }

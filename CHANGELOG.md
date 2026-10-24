@@ -4,6 +4,37 @@ All notable changes to **HQPlayer Bridge** are recorded here. This file records
 what users receive: one entry per release published to `main`. Per-version
 development notes live in `CLAUDE.md`.
 
+## 1.1.0 — 2026-10-24
+
+Fork by PhmZ4. A bit-perfect mode for the path from Lyrion to HQPlayer, the
+ReplayGain setting made visible, and the connection status on the plugin's own
+settings page.
+
+### Improvements
+
+- **Bit-perfect mode.** A new **HQPlayer** page in each HQPlayer player's
+  settings (Player settings → HQPlayer) with one switch. While on, HQPlayer gets
+  the source exactly as it is: no ReplayGain (unity is sent with every track,
+  overriding the file's own tags, so neither Lyrion nor HQPlayer applies a
+  gain), Lyrion's bitrate limit is held at none so nothing is turned into MP3,
+  and Lyrion's volume control is set to fixed. Switching it on sets HQPlayer's
+  volume to 0 dB once; switching it off puts Lyrion's volume control back as it
+  was. HQPlayer's own processing is not touched.
+- **Native files only.** An optional second switch skips, instead of playing,
+  anything Lyrion would convert (ALAC, AAC, M4A) or relay through its own
+  stream (Deezer, radio). Three skipped in a row stop the player.
+- **What Lyrion could change, checked.** The same page lists each Lyrion setting
+  that can alter the stream - ReplayGain, bitrate limit, volume control - with a
+  warning sign on any that does, plus this player's route and the gain last sent.
+- **ReplayGain is now on the player's Audio page.** The bridge has always sent
+  Lyrion's ReplayGain figure to HQPlayer, but the setting itself was hidden, so
+  it could not be switched off. It now appears like on any other player.
+- **Connection status on the settings page.** Settings → Plugins → HQPlayer
+  Bridge now shows each HQPlayer: whether it is connected and where, its output
+  mode, filter, shaper and transport, the route of the playing track and the
+  bit-perfect state. It is a snapshot taken when the page opens, with a link to
+  the live view for figures that move.
+
 ## 1.0.40 — 2026-10-01
 
 A settings page for connecting to HQPlayer by IP address, a one-tap HQPlayer

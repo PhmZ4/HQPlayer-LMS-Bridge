@@ -14,6 +14,32 @@
 <p style="font-weight:bold;">[% f | html %]</p>
 [% END %]
 
+[%# THE CONNECTION STATUS (1.1.0) - a snapshot drawn at page load, NOT a poll:
+    a self-polling version of this page never refreshed in Material (see
+    Live.pm's header). Rows are formatted in Settings::statusLines; this only
+    prints them. Reload the page, or open the live view, to see it move. %]
+[% IF hqp_status %]
+[% WRAPPER setting title="PLUGIN_HQPLAYER_STATUS_TITLE" desc="PLUGIN_HQPLAYER_STATUS_SNAPSHOT" %]
+<div>
+[% FOREACH pl IN hqp_players %]
+  <div style="margin:0 0 8px 0;">
+    <div style="font-weight:bold;">[% pl.name | html %]</div>
+[% FOREACH l IN pl.lines %]
+    <div style="margin:1px 0 1px 1em;"><span style="opacity:.75;">[% l.label | html %] :</span> <span style="[% IF l.warn %]color:#c62828;font-weight:bold;[% END %]">[% l.value | html %]</span></div>
+[% END %]
+  </div>
+[% END %]
+[% IF !hqp_players.size %]
+  <div>[% 'PLUGIN_HQPLAYER_STATUS_NONE' | string %]</div>
+[% END %]
+[% IF hqp_waiting %]
+  <div style="font-style:italic;">[% hqp_waiting | html %]</div>
+[% END %]
+  <div style="margin-top:6px;"><a href="/hqplive" target="_blank">[% 'PLUGIN_HQPLAYER_LIVE_TITLE' | string %]</a></div>
+</div>
+[% END %]
+[% END %]
+
 [%# TWO MODES, NEVER BOTH. A RADIO GROUP to LBF's spec: <label>-wrapped,
     <br>-separated, no <select>, and exactly one option checked in every
     state - hqp_auto is decided in Perl (Settings::beforeRender), so the

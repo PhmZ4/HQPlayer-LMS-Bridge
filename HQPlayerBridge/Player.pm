@@ -50,10 +50,16 @@ __PACKAGE__->mk_accessor( 'rw', qw(
     hqNext hqArmNext hqTrackNo hqTrackSerial hqStaleRun hqStartedAt hqFailRun
     hqItems hqSkipPending hqUnstopped
     hqArt
+    hqGainSent
 ) );
 
 my $log        = logger('plugin.hqplayerbridge');
 my $serverPrefs = preferences('server');
+
+# THE PLUGIN'S OWN PER-PLAYER PREFS - the bit-perfect switches (1.1.0). Kept in
+# the plugin's namespace, not the server's, so LMS's own player prefs are only
+# ever written by applyBitPerfect, on the user's explicit action.
+my $pluginPrefs = preferences('plugin.hqplayerbridge');
 
 # <Status/> is a SUBSCRIBE, not a poll: one is enough, after which HQPlayer
 # streams status at roughly 1/s on its own.  So we never poll - we only keep a
@@ -283,7 +289,13 @@ sub canDirectStream {
 # connection error. LMS only consults this when the url redirects, but the
 # answer is still yes.
 sub canHTTPS         { 1 }
-sub canDoReplayGain   { 0 }
+# REPLAYGAIN IS SHOWN, BECAUSE IT IS USED (1.1.0). _replayGain has always read
+# the player's replayGainMode through fetchGainMode and sent the result to
+# HQPlayer - but with this at 0, LMS hid that very setting (Audio page, Jive and
+# the button UI all gate on canDoReplayGain(0)), so a gain was applied that the
+# user could neither see nor switch off. Nothing else in LMS 9.1 reads it: the
+# slimproto replay_gain field it also gates is a Squeezebox path we never take.
+sub canDoReplayGain   { 1 }
 sub needsWeightedPlayPoint { 0 }
 # CONNECTED IS THE CONTROL LINK, as a Lyrion player's is its SlimProto socket.
 # It used to be `tcpsock`, a literal 1, so a dead HQPlayer stayed listed as
@@ -694,6 +706,9 @@ sub _metadata {
     my $meta = $self->_handlerMeta($track);
     my $gain = $self->_replayGain( $song, $track );
 
+    # What the last item handed to HQPlayer carried - for the status surfaces.
+    $self->hqGainSent($gain);
+
     my $title  = $meta->{title}  || eval { $track->title }      || '';
     my $artist = $meta->{artist} || eval { $track->artistName } || '';
     my $album  = $meta->{album}  || eval { $track->albumname }  || '';
@@ -848,6 +863,14 @@ sub _replayGain {
     my $url = eval { $track->url } || '';
 
     return undef unless $url;
+
+    # BIT-PERFECT ASSERTS UNITY - the one place a 0.00 IS sent on purpose.
+    # album_gain OVERRIDES the file's own REPLAYGAIN tag (measured, see
+    # _metadata), so an explicit 0 is what guarantees no gain from EITHER side:
+    # not LMS's figure, not a service handler's trackGain (which fetchGainMode
+    # lets bypass replayGainMode entirely), and not HQPlayer's own tag read.
+    # Outside bit-perfect mode the rule below - no figure, no attribute - holds.
+    return 0 if $self->bitPerfect;
 
     my $raw  = eval { $song->replayGain };
     my $gain = $raw;
@@ -1272,6 +1295,9 @@ sub _superseded {
 sub play {
     my ( $self, $params ) = @_;
 
+    # Bit-perfect: no bitrate cap may be in force when LMS opens a stream.
+    $self->_enforceBitrate if $self->bitPerfect;
+
     my $controller = $params->{controller};
     my $song       = eval { $controller->song } or do {
         $log->error( $self->name . ': play() with no song' );
@@ -1353,6 +1379,30 @@ sub _startTrack {
     # new one.
     $self->bufferReady( 0 );
 
+    # NATIVE ONLY (bit-perfect mode): a track LMS would have to convert or relay
+    # is not loaded. It fails EXACTLY the way a refused PlaylistAdd does -
+    # deferred, generation-stamped, through _loadFailed - so LMS skips it with
+    # a message and FAIL_LIMIT still stops a run of them. The Stop and the
+    # PlaylistClear still go out: a skip onto a refused track must not leave
+    # the previous one playing under it.
+    if ( $self->_refuses( $self->hqTier || 0 ) ) {
+
+        $log->warn( $self->name . sprintf(
+            ': bit-perfect, native only - refusing a tier %d track (LMS would %s it): %s',
+            $self->hqTier, ( $self->hqTier == 3 ? 'transcode' : 'relay' ), $url ) );
+
+        if ( $self->hqControl && $self->hqControl->up ) {
+            $self->_send( '<Stop/>',          undef, { scope => 'track' } );
+            $self->_send( '<PlaylistClear/>', undef, { scope => 'track' } );
+        }
+
+        Slim::Utils::Timers::killTimers( $self, \&_refused );
+        Slim::Utils::Timers::setTimer( $self,
+            Time::HiRes::time(), \&_refused, $self->hqGen || 0 );
+
+        return 1;
+    }
+
     $self->_queueTrack( $url, $song, $seek );
 
     # The controller counts the player as started from here; actual playback
@@ -1416,7 +1466,12 @@ sub _handOver {
 
     my $newTier = $self->hqTier || 0;
 
-    if ( $newTier == 1 || $newTier == 3 || $newTier == 5 ) {
+    # NATIVE ONLY: a track LMS would convert is never appended. It is held
+    # like tier 4 below, so it reaches _startTrack - the one place it is
+    # refused - instead of slipping into HQPlayer's playlist behind our back.
+    my $refuse = $self->_refuses($newTier);
+
+    if ( !$refuse && ( $newTier == 1 || $newTier == 3 || $newTier == 5 ) ) {
         # Resolving the queued item must not change facts about the item still
         # playing. This matters when a playlist edit flushes the append before
         # hand-over: the replacement decision must still use the current
@@ -1438,8 +1493,9 @@ sub _handOver {
     # spend resolving the track after the gap had already started.
     $self->hqTier($tier);
 
-    main::INFOLOG && $log->is_info && $log->info(
-        $self->name . ': the next track is tier 4 - holding it for a normal load at end of track' );
+    main::INFOLOG && $log->is_info && $log->info( $self->name . ( $refuse
+        ? ": the next track is tier $newTier and this player plays native files only - holding it"
+        : ': the next track is tier 4 - holding it for a normal load at end of track' ) );
 
     $self->hqNext( { mode => 'load', song => $song, seek => $seek } );
 
@@ -1913,7 +1969,7 @@ sub _startDeadline {
 # same missing link - it trips at once instead. It is still counted and cleared
 # here, so the breaker's run stays the one record of failed loads.
 sub _loadFailed {
-    my ( $self, $why, $linkDown ) = @_;
+    my ( $self, $why, $linkDown, $token ) = @_;
 
     my $run = ( $self->hqFailRun || 0 ) + 1;
     $self->hqFailRun($run);
@@ -1926,7 +1982,7 @@ sub _loadFailed {
             ': load failed (%s) - %d of %d', $why, $run, FAIL_LIMIT ) );
 
         # As before: LMS is told, and LMS gets to skip.
-        $c->playerStreamingFailed( $self, 'PROBLEM_OPENING' ) if $c;
+        $c->playerStreamingFailed( $self, $token || 'PROBLEM_OPENING' ) if $c;
 
         return;
     }
@@ -1975,6 +2031,135 @@ sub _tripStop {
     $self->execute( ['stop'] );
 
     return;
+}
+
+# ---------------------------------------------------------------------------
+# BIT-PERFECT MODE (1.1.0) - the player's "HQPlayer" settings page.
+#
+# What it means here: what LEAVES LMS for HQPlayer is the source, unaltered.
+# What HQPlayer does with it afterwards (upsampling, modulation, its own volume
+# in its DSP) is HQPlayer's job and is not touched.
+#
+# ONE SWITCH, FOUR EFFECTS, all reversible:
+#
+#   * ReplayGain - unity asserted on every item (_replayGain).
+#   * LMS's bitrate limit - held at 0 (no limit) at every load. Any other value
+#     makes LMS transcode tier 4 to MP3 - see initBitrateLimit.
+#   * LMS's volume control - set to FIXED, so the slider stops driving
+#     HQPlayer. The value it had is kept and put back when the mode goes off.
+#   * HQPlayer's volume - sent to unity (0 dB, or its ceiling if lower) ONCE,
+#     when the mode is switched on. Not re-asserted: HQPlayer's own volume and
+#     the endpoint's knob stay the user's to move afterwards.
+#
+# THE LEDGER RULE "THE PLUGIN NEVER WRITES digitalVolumeControl" STILL HOLDS
+# for everything automatic: that rule killed detectors that INFERRED a fixed
+# volume and wrote the pref on their own. This writes it only from the user's
+# own save of the switch (Plugin::_bitPerfectChanged), and restores it after.
+#
+# NATIVE ONLY, a second switch under the first: a track LMS would convert
+# (tier 3) or relay through its own stream (tier 4) is refused rather than
+# played - see _startTrack. Tiers 1 and 5 are the untouched ones.
+# ---------------------------------------------------------------------------
+sub bitPerfect {
+    my $self = shift;
+    return $pluginPrefs->client($self)->get('bitperfect') ? 1 : 0;
+}
+
+sub nativeOnly {
+    my $self = shift;
+    return ( $self->bitPerfect && $pluginPrefs->client($self)->get('nativeonly') ) ? 1 : 0;
+}
+
+# Does LMS itself touch this tier's bytes? 3 transcodes, 4 relays (and may
+# transcode, by the server's File Types rules). 1 and 5 never. Callable as a
+# function or a method - the tier is always the last argument.
+sub tierConverts {
+    my $tier = pop || 0;
+    return ( $tier == 3 || $tier == 4 ) ? 1 : 0;
+}
+
+sub _refuses {
+    my ( $self, $tier ) = @_;
+    return ( $self->nativeOnly && tierConverts($tier) ) ? 1 : 0;
+}
+
+# TRAP: setTimer calls back as ($obj, @args) - see _startDeadline.
+sub _refused {
+    my ( $self, $gen ) = @_;
+
+    return if $self->_superseded( $gen, 'bit-perfect refusal' );
+
+    $self->_loadFailed( 'bit-perfect: native files only', 0, 'PLUGIN_HQPLAYER_BP_REFUSED' );
+
+    return;
+}
+
+# Held at 0 while bit-perfect is on. Cheap: one pref read per load.
+sub _enforceBitrate {
+    my $self = shift;
+
+    my $cprefs = $serverPrefs->client($self);
+    my $max    = $cprefs->get('maxBitrate');
+
+    return 0 if defined $max && $max eq '0';
+
+    $cprefs->set( 'maxBitrate', 0 );
+
+    $log->warn( $self->name . ': bit-perfect - the bitrate limit was '
+        . ( defined $max ? $max : 'unset' ) . ', set back to 0 (no limit) so LMS cannot transcode to MP3' );
+
+    return 1;
+}
+
+# Called by Plugin::_bitPerfectChanged when the user saves the switch.
+sub applyBitPerfect {
+    my ( $self, $on ) = @_;
+
+    my $cprefs = $serverPrefs->client($self);
+    my $pprefs = $pluginPrefs->client($self);
+
+    if ($on) {
+        # Remember the user's own choice ONCE, so a second save cannot record
+        # our forced 0 as what they had.
+        if ( !defined $pprefs->get('bpSavedVolCtl') ) {
+            my $d = $cprefs->get('digitalVolumeControl');
+            $pprefs->set( 'bpSavedVolCtl', defined $d ? $d : 1 );
+        }
+
+        $cprefs->set( 'digitalVolumeControl', 0 );
+        $self->_enforceBitrate;
+        $self->_sendUnity;
+
+        $log->warn( $self->name . ': bit-perfect mode ON - no ReplayGain, no bitrate limit, LMS volume fixed' );
+    }
+    else {
+        my $d = $pprefs->get('bpSavedVolCtl');
+        $cprefs->set( 'digitalVolumeControl', defined $d ? $d : 1 );
+        $pprefs->set( 'bpSavedVolCtl', undef );
+
+        $log->warn( $self->name . ': bit-perfect mode OFF - LMS volume control restored' );
+    }
+
+    return;
+}
+
+# Unity, clamped to HQPlayer's own ceiling - a ceiling below 0 dB is the
+# user's limit and is respected, exactly as volume() respects it.
+sub _sendUnity {
+    my $self = shift;
+
+    return 0 unless $self->connected;
+
+    my $db = $self->_volMax;
+    $db = 0 if $db > 0;
+
+    $self->hqVolDb($db);
+    $self->hqVolSent($db);
+    $self->hqVolSentAt( Time::HiRes::time() );
+
+    $self->_send( '<Volume value="' . _fmtDb($db) . '"/>' );
+
+    return 1;
 }
 
 # hqWanted is the last transport state we asked HQPlayer for.  It is what makes
