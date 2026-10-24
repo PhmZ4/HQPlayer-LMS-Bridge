@@ -25,7 +25,7 @@
 [% WRAPPER setting title="PLUGIN_HQPLAYER_BP_CHECKS" desc="PLUGIN_HQPLAYER_BP_CHECKS_DESC" %]
 <div>
 [% FOREACH c IN hqp_checks %]
-  <div style="margin:2px 0;"><span style="font-weight:bold;color:[% IF c.ok %]#2e7d32[% ELSE %]#c62828[% END %];">[% IF c.ok %]&#10003;[% ELSE %]&#9888;[% END %]</span> [% c.text | html %]</div>
+  <div style="margin:2px 0;"><span style="font-weight:bold;color:[% IF c.ok == 2 %]#888888[% ELSIF c.ok %]#2e7d32[% ELSE %]#c62828[% END %];">[% IF c.ok == 2 %]&#8211;[% ELSIF c.ok %]&#10003;[% ELSE %]&#9888;[% END %]</span> [% c.text | html %]</div>
 [% END %]
 </div>
 [% END %]

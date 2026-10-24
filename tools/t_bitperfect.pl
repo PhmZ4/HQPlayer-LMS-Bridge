@@ -217,18 +217,51 @@ is( $p{hqp_bp}, '0', 'and the page redraws what was saved' );
 $sp->client($c)->set( 'replayGainMode', 3 );
 $sp->client($c)->set( 'maxBitrate', 0 );
 $sp->client($c)->set( 'digitalVolumeControl', 0 );
+$c->hqTier(1); $c->hqRefusedTier(undef);
 $PS->handler( $c, \%p );
 is( "$p{hqp_bp}$p{hqp_native}", '11', 'the radios show ON / ON' );
-is( join( '', map { $_->{ok} } @{ $p{hqp_checks} } ), '111', 'every check is clean in bit-perfect with no cap and fixed volume' );
+is( join( '', map { $_->{ok} } @{ $p{hqp_checks} } ), '1111', 'every check is clean in bit-perfect with no cap and fixed volume' );
 ok( scalar( $p{hqp_checks}[0]{text} =~ /unity/ ), 'the ReplayGain check says unity is sent' );
 
 %p = ();
 $pp->client($c)->set( 'bitperfect', 0 );
 $sp->client($c)->set( 'maxBitrate', 320 );
 $sp->client($c)->set( 'digitalVolumeControl', 1 );
+$c->hqTier(3);
 $PS->handler( $c, \%p );
-is( join( '', map { $_->{ok} } @{ $p{hqp_checks} } ), '000', 'ReplayGain on, a cap and a variable volume are all flagged' );
+is( join( '', map { $_->{ok} } @{ $p{hqp_checks} } ), '0000', 'ReplayGain on, a cap, a variable volume and a transcoded track are all flagged' );
 ok( scalar( $p{hqp_checks}[1]{text} =~ /320 kbps/ ), 'the cap is named' );
+
+print "-- the 4th check: the route of the last track --\n";
+my $route = sub { $c->hqTier( $_[0] ); $c->hqRefusedTier( $_[1] ); my %q; $PS->handler( $c, \%q ); $q{hqp_checks}[3] };
+is( $route->(0)->{ok}, '2', 'nothing played yet is NEUTRAL, neither clean nor flagged' );
+ok( scalar( $route->(0)->{text} =~ /nothing played/ ), 'and says so' );
+is( $route->(1)->{ok}, '1', 'an original file is clean' );
+is( $route->(5)->{ok}, '1', 'a direct stream is clean' );
+ok( scalar( $route->(5)->{text} =~ /streaming service/ ), 'and named as such' );
+is( $route->(3)->{ok}, '0', 'a transcoded file is flagged' );
+ok( scalar( $route->(3)->{text} =~ /transcoded to FLAC/ ), 'as transcoded' );
+is( $route->(4)->{ok}, '0', 'a relayed stream is flagged' );
+ok( scalar( $route->(4)->{text} =~ /relayed/ ), 'as relayed' );
+is( $route->(3, 3)->{ok}, '1', 'a REFUSED track is clean - nothing converted reached HQPlayer' );
+ok( scalar( $route->(3, 3)->{text} =~ /skipped/ ), 'and says it was skipped' );
+
+# The refusal records its tier, and a real load clears it.
+$pp->client($c)->set( 'bitperfect', 1 ); $pp->client($c)->set( 'nativeonly', 1 );
+$c->hqRefusedTier(undef);
+{
+    my $lc2 = FakeController->new;
+    $c->controller($lc2);
+    $lc2->{song} = FakeSong->new($alac);
+    $c->play({ controller => $lc2 });
+    is( $c->hqRefusedTier, '3', 'a refusal records the refused tier' );
+    $lc2->{song} = FakeSong->new($local);
+    $c->play({ controller => $lc2 });
+    is( $c->hqRefusedTier, '(undef)', 'and the next real load clears it' );
+    is( $c->hqTier, '1', 'leaving the route of the track that plays' );
+    Slim::Utils::Timers::_reset();
+}
+$pp->client($c)->set( 'bitperfect', 0 ); $pp->client($c)->set( 'nativeonly', 0 );
 
 print "-- the connection status --\n";
 my $lines = Plugins::HQPlayerBridge::Settings::statusLines( {

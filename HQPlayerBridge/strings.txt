@@ -315,3 +315,27 @@ PLUGIN_HQPLAYER_BP_HQP_TITLE
 PLUGIN_HQPLAYER_BP_HQP_DESC
 	EN	Lyrion's side is covered above. In HQPlayer itself, keep its own volume at 0 dB if you want no level change. With bit-perfect on, the unity gain sent with each track already overrides HQPlayer's ReplayGain tag reading.
 	FR	Le côté Lyrion est couvert ci-dessus. Dans HQPlayer lui-même, gardez son volume à 0 dB si vous ne voulez aucun changement de niveau. Avec le mode bit-perfect, le gain unitaire envoyé avec chaque morceau prend déjà le pas sur la lecture des tags ReplayGain par HQPlayer.
+
+PLUGIN_HQPLAYER_BP_CHK_ROUTE_NONE
+	EN	Last track: nothing played since HQPlayer connected
+	FR	Dernier morceau : rien n'a été lu depuis la connexion d'HQPlayer
+
+PLUGIN_HQPLAYER_BP_CHK_ROUTE_1
+	EN	Last track: the original file, untouched by Lyrion
+	FR	Dernier morceau : le fichier original, sans intervention de Lyrion
+
+PLUGIN_HQPLAYER_BP_CHK_ROUTE_5
+	EN	Last track: fetched by HQPlayer straight from the streaming service, untouched by Lyrion
+	FR	Dernier morceau : récupéré par HQPlayer directement auprès du service de streaming, sans intervention de Lyrion
+
+PLUGIN_HQPLAYER_BP_CHK_ROUTE_3
+	EN	Last track: transcoded to FLAC by Lyrion (a format HQPlayer cannot decode, such as ALAC or AAC)
+	FR	Dernier morceau : transcodé en FLAC par Lyrion (un format qu'HQPlayer ne sait pas décoder, comme ALAC ou AAC)
+
+PLUGIN_HQPLAYER_BP_CHK_ROUTE_4
+	EN	Last track: relayed through Lyrion's own stream (Deezer, radio), and transcoded if Lyrion's File Types rules say so
+	FR	Dernier morceau : relayé par le flux de Lyrion (Deezer, radio), et transcodé si les règles Types de fichiers de Lyrion le demandent
+
+PLUGIN_HQPLAYER_BP_CHK_ROUTE_SKIPPED
+	EN	Last track: skipped by Native files only - nothing converted reached HQPlayer
+	FR	Dernier morceau : ignoré par Fichiers natifs uniquement - rien de converti n'a atteint HQPlayer

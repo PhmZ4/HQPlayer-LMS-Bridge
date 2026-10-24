@@ -4,6 +4,18 @@ All notable changes to **HQPlayer Bridge** are recorded here. This file records
 what users receive: one entry per release published to `main`. Per-version
 development notes live in `CLAUDE.md`.
 
+## 1.1.1 — 2026-10-24
+
+### Improvements
+
+- **A 4th check on the player's HQPlayer page: the route of the last track.**
+  Alongside ReplayGain, bitrate limit and volume control, the list now says
+  whether Lyrion itself touched the track HQPlayer is playing or last played:
+  ✓ for an original file or a stream HQPlayer fetched directly from the
+  service, ⚠ for a file Lyrion transcoded (ALAC, AAC, M4A) or a stream it
+  relayed (Deezer, radio), ✓ for a track *Native files only* skipped, and a
+  neutral – when nothing has played since HQPlayer connected.
+
 ## 1.1.0 — 2026-10-24
 
 Fork by PhmZ4. A bit-perfect mode for the path from Lyrion to HQPlayer, the

@@ -35,7 +35,8 @@ use base qw(Slim::Web::Settings);
 use Slim::Utils::Prefs;
 use Slim::Utils::Strings;
 
-use Plugins::HQPlayerBridge::Settings;    # statusLines - one formatter, two pages
+use Plugins::HQPlayerBridge::Settings;
+use Plugins::HQPlayerBridge::Player;     # tierConverts    # statusLines - one formatter, two pages
 
 my $prefs       = preferences('plugin.hqplayerbridge');
 my $serverPrefs = preferences('server');
@@ -117,6 +118,23 @@ sub beforeRender {
     my $dvc   = $sp->get('digitalVolumeControl');
     my $fixed = defined $dvc && !$dvc;
     $add->( $fixed, $fixed ? $s->('PLUGIN_HQPLAYER_BP_CHK_VOL_FIXED') : $s->('PLUGIN_HQPLAYER_BP_CHK_VOL_VAR') );
+
+    # 4. THE ROUTE OF THE LAST TRACK (1.1.1) - not a setting but the fact the
+    # three above exist to protect: did Lyrion itself touch the bytes of the
+    # track HQPlayer is playing, or last played? hqTier is set at every load
+    # and kept after a stop. ok => 2 is NEUTRAL (nothing to judge yet).
+    my $tier = $client->can('hqTier') ? ( $client->hqTier || 0 ) : 0;
+
+    if ( $client->can('hqRefusedTier') && defined $client->hqRefusedTier ) {
+        $add->( 1, $s->('PLUGIN_HQPLAYER_BP_CHK_ROUTE_SKIPPED') );
+    }
+    elsif ( !$tier ) {
+        push @checks, { ok => 2, text => $s->('PLUGIN_HQPLAYER_BP_CHK_ROUTE_NONE') };
+    }
+    else {
+        $add->( !Plugins::HQPlayerBridge::Player::tierConverts($tier),
+            $s->( 'PLUGIN_HQPLAYER_BP_CHK_ROUTE_' . $tier ) );
+    }
 
     $params->{hqp_checks} = \@checks;
 
