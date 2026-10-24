@@ -7,51 +7,64 @@ PLUGIN_HQPLAYER_BRIDGE_DESC
 
 PLUGIN_HQPLAYER_STATUS
 	EN	Control link
+	FR	Liaison de contrôle
 
 PLUGIN_HQPLAYER_CONNECTED
 	EN	Connected
+	FR	Connecté
 
 PLUGIN_HQPLAYER_DISCONNECTED
 	EN	Not connected
+	FR	Non connecté
 
 PLUGIN_HQPLAYER_OUTPUT
 	EN	Output transport
+	FR	Transport de sortie
 
 
 
 
 PLUGIN_HQPLAYER_SOURCE
 	EN	Source
+	FR	Source
 
 PLUGIN_HQPLAYER_OUTFORMAT
 	EN	Output format
+	FR	Format de sortie
 
 PLUGIN_HQPLAYER_PROCESSING
 	EN	Processing speed
 
 PLUGIN_HQPLAYER_MODE
 	EN	Output mode
+	FR	Mode de sortie
 
 PLUGIN_HQPLAYER_FILTER
 	EN	Filter
+	FR	Filtre
 
 PLUGIN_HQPLAYER_SHAPER
 	EN	Shaper
+	FR	Shaper
 
 PLUGIN_HQPLAYER_SPEED
 	EN	x realtime
 
 PLUGIN_HQPLAYER_TIER1
 	EN	Playing the original file straight from Lyrion, untranscoded - tags and cover art come from the file itself.
+	FR	Lecture du fichier original directement depuis Lyrion, sans transcodage - tags et pochette viennent du fichier lui-même.
 
 PLUGIN_HQPLAYER_TIER3
 	EN	Playing a local file that HQPlayer cannot decode itself, transcoded by Lyrion on the way past. Pre-queued, so track joins stay seamless.
+	FR	Lecture d'un fichier local qu'HQPlayer ne sait pas décoder, transcodé par Lyrion au passage. Préchargé, les enchaînements restent sans blanc.
 
 PLUGIN_HQPLAYER_TIER4
 	EN	Playing through the Lyrion player stream, used for radio and for services that cannot hand out a direct link. One stream per player, so track joins are not pre-queued.
+	FR	Lecture via le flux du lecteur Lyrion, utilisé pour la radio et les services sans lien direct. Un seul flux par lecteur, les enchaînements ne sont pas préchargés.
 
 PLUGIN_HQPLAYER_TIER5
 	EN	Playing a streaming service directly - HQPlayer fetches the service's own URL, with no Lyrion proxy or transcode in between. Pre-queued, so track joins stay seamless.
+	FR	Lecture directe d'un service de streaming - HQPlayer récupère l'URL du service lui-même, sans relais ni transcodage par Lyrion. Préchargé, les enchaînements restent sans blanc.
 
 
 PLUGIN_HQPLAYER_NONE_DESC
@@ -78,6 +91,7 @@ PLUGIN_HQPLAYER_TRANSPORT_ID
 
 PLUGIN_HQPLAYER_LIVE_TITLE
 	EN	HQPlayer Live View
+	FR	Vue en direct HQPlayer
 
 PLUGIN_HQPLAYER_LIVE_BACK
 	EN	Back to Material
@@ -184,3 +198,119 @@ PLUGIN_HQPLAYER_ADDR_EMPTY
 
 PLUGIN_HQPLAYER_ADDR_FOUND
 	EN	Saved: HQPlayer '%s' answered at %s.
+
+PLUGIN_HQPLAYER_PLAYER_SETTINGS
+	EN	HQPlayer
+	FR	HQPlayer
+
+PLUGIN_HQPLAYER_STATUS_TITLE
+	EN	Connection status
+	FR	État de la connexion
+
+PLUGIN_HQPLAYER_STATUS_SNAPSHOT
+	EN	As it was when this page was opened - reload the page to refresh it, or open the live view, which updates every second.
+	FR	Tel qu'à l'ouverture de cette page - rechargez la page pour l'actualiser, ou ouvrez la vue en direct, mise à jour chaque seconde.
+
+PLUGIN_HQPLAYER_STATUS_NONE
+	EN	No HQPlayer is connected yet.
+	FR	Aucun HQPlayer n'est encore connecté.
+
+PLUGIN_HQPLAYER_ROUTE
+	EN	Route of the playing track
+	FR	Route du morceau en cours
+
+PLUGIN_HQPLAYER_GAIN
+	EN	Gain on the last track sent
+	FR	Gain du dernier morceau transmis
+
+PLUGIN_HQPLAYER_GAIN_NONE
+	EN	none sent (HQPlayer reads the file tags itself, if set to)
+	FR	aucun envoyé (HQPlayer lit lui-même les tags du fichier, s'il est réglé ainsi)
+
+PLUGIN_HQPLAYER_BP_TITLE
+	EN	Bit-perfect mode
+	FR	Mode bit-perfect
+
+PLUGIN_HQPLAYER_BP_DESC
+	EN	Hands HQPlayer the source exactly as it is. While on: no ReplayGain is applied (unity is sent, overriding the file's own tags), Lyrion's bitrate limit is held at none so nothing is turned into MP3, and Lyrion's volume control is set to fixed so the slider no longer moves HQPlayer. Switching it on also sets HQPlayer's volume to 0 dB once; HQPlayer's own volume stays yours to change afterwards. Switching it off puts Lyrion's volume control back as it was. HQPlayer's own processing - upsampling, filters, modulation - is not affected.
+	FR	Transmet la source à HQPlayer telle quelle. Une fois activé : aucun ReplayGain n'est appliqué (un gain unitaire est envoyé, qui prend le pas sur les tags du fichier), la limite de débit de Lyrion est maintenue à « aucune » pour que rien ne soit converti en MP3, et le contrôle du volume de Lyrion passe en fixe : le curseur ne pilote plus HQPlayer. L'activation règle aussi une fois le volume d'HQPlayer à 0 dB ; vous restez libre de le changer ensuite dans HQPlayer. La désactivation rétablit le contrôle du volume de Lyrion tel qu'il était. Le traitement d'HQPlayer lui-même - suréchantillonnage, filtres, modulation - n'est pas modifié.
+
+PLUGIN_HQPLAYER_BP_ON
+	EN	On
+	FR	Activé
+
+PLUGIN_HQPLAYER_BP_OFF
+	EN	Off
+	FR	Désactivé
+
+PLUGIN_HQPLAYER_BP_ON_NATIVE
+	EN	On, native files only
+	FR	Activé, fichiers natifs uniquement
+
+PLUGIN_HQPLAYER_BP_UNITY
+	EN	bit-perfect
+	FR	bit-perfect
+
+PLUGIN_HQPLAYER_BP_REFUSED
+	EN	Skipped: bit-perfect mode plays native files only, and this track would be converted or relayed by Lyrion
+	FR	Ignoré : le mode bit-perfect ne lit que les fichiers natifs, et ce morceau serait converti ou relayé par Lyrion
+
+PLUGIN_HQPLAYER_NATIVE_TITLE
+	EN	Native files only
+	FR	Fichiers natifs uniquement
+
+PLUGIN_HQPLAYER_NATIVE_DESC
+	EN	Used only while bit-perfect mode is on. Lyrion never touches files HQPlayer decodes itself (FLAC, WAV, AIFF, DSF/DFF, WavPack, MP3, Ogg) or Qobuz and Tidal streamed directly. When on, anything else is skipped instead of played: ALAC, AAC and M4A, which Lyrion would transcode, and Deezer or radio, which go through Lyrion's own stream. Three skipped in a row stop the player. When off, those still play and the status shows the route in red.
+	FR	Utilisé seulement quand le mode bit-perfect est activé. Lyrion ne touche jamais aux fichiers qu'HQPlayer décode lui-même (FLAC, WAV, AIFF, DSF/DFF, WavPack, MP3, Ogg) ni à Qobuz et Tidal lus en direct. Une fois activé, tout le reste est ignoré au lieu d'être lu : ALAC, AAC et M4A, que Lyrion transcoderait, ainsi que Deezer et la radio, qui passent par le flux de Lyrion. Trois morceaux ignorés d'affilée arrêtent le lecteur. Désactivé, ils restent lus et l'état affiche la route en rouge.
+
+PLUGIN_HQPLAYER_NATIVE_ON
+	EN	Skip anything Lyrion would convert or relay
+	FR	Ignorer tout ce que Lyrion convertirait ou relaierait
+
+PLUGIN_HQPLAYER_NATIVE_OFF
+	EN	Play it anyway, and flag it
+	FR	Le lire quand même, et le signaler
+
+PLUGIN_HQPLAYER_BP_CHECKS
+	EN	What Lyrion could change
+	FR	Ce que Lyrion pourrait modifier
+
+PLUGIN_HQPLAYER_BP_CHECKS_DESC
+	EN	Each Lyrion setting that can alter what reaches HQPlayer, read from where Lyrion itself reads it. A warning sign marks one that does. ReplayGain is on this player's Audio settings page.
+	FR	Chaque réglage de Lyrion susceptible de modifier ce qui arrive à HQPlayer, lu là où Lyrion le lit lui-même. Un panneau d'avertissement signale ceux qui le modifient. Le ReplayGain se règle dans la page Audio de ce lecteur.
+
+PLUGIN_HQPLAYER_BP_CHK_RG_UNITY
+	EN	ReplayGain: unity sent on every track (bit-perfect)
+	FR	ReplayGain : gain unitaire envoyé pour chaque morceau (bit-perfect)
+
+PLUGIN_HQPLAYER_BP_CHK_RG_ON
+	EN	ReplayGain: on - Lyrion's gain is sent to HQPlayer
+	FR	ReplayGain : activé - le gain calculé par Lyrion est envoyé à HQPlayer
+
+PLUGIN_HQPLAYER_BP_CHK_RG_OFF
+	EN	ReplayGain: off in Lyrion (HQPlayer may still read the file tags itself)
+	FR	ReplayGain : désactivé dans Lyrion (HQPlayer peut encore lire lui-même les tags du fichier)
+
+PLUGIN_HQPLAYER_BP_CHK_RATE_OK
+	EN	Bitrate limit: none - nothing is turned into MP3
+	FR	Limite de débit : aucune - rien n'est converti en MP3
+
+PLUGIN_HQPLAYER_BP_CHK_RATE_CAP
+	EN	Bitrate limit: %s kbps - streams through Lyrion are transcoded to MP3
+	FR	Limite de débit : %s kbps - les flux relayés par Lyrion sont convertis en MP3
+
+PLUGIN_HQPLAYER_BP_CHK_VOL_FIXED
+	EN	Volume control: fixed - Lyrion's slider does not move HQPlayer
+	FR	Contrôle du volume : fixe - le curseur de Lyrion ne pilote pas HQPlayer
+
+PLUGIN_HQPLAYER_BP_CHK_VOL_VAR
+	EN	Volume control: variable - Lyrion's slider sets HQPlayer's volume
+	FR	Contrôle du volume : variable - le curseur de Lyrion règle le volume d'HQPlayer
+
+PLUGIN_HQPLAYER_BP_HQP_TITLE
+	EN	On the HQPlayer side
+	FR	Côté HQPlayer
+
+PLUGIN_HQPLAYER_BP_HQP_DESC
+	EN	Lyrion's side is covered above. In HQPlayer itself, keep its own volume at 0 dB if you want no level change. With bit-perfect on, the unity gain sent with each track already overrides HQPlayer's ReplayGain tag reading.
+	FR	Le côté Lyrion est couvert ci-dessus. Dans HQPlayer lui-même, gardez son volume à 0 dB si vous ne voulez aucun changement de niveau. Avec le mode bit-perfect, le gain unitaire envoyé avec chaque morceau prend déjà le pas sur la lecture des tags ReplayGain par HQPlayer.

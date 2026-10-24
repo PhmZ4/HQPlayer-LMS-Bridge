@@ -186,23 +186,30 @@ ok(scalar($SENT =~ /removeChild\(back\)/),
 ok(scalar($SENT !~ /window\.top\.location\.href\s*=/),
    'so it never navigates the top window - that was destructive once the tile opened inline');
 
-print "-- the settings page is settings only, never the live reading --\n";
-# THE SETTINGS PAGE CAME BACK ON 2026-09-27 - but ONLY for the typed HQPlayer
-# addresses and the discovery switch. The old one existed to read numbers off,
-# could not keep them current, and put a link inside a link on the way to the
-# one page that works. That must not return: the live reading is Live.pm's.
+print "-- the settings page: settings plus a status SNAPSHOT, never a live reading --\n";
+# THE SETTINGS PAGE CAME BACK ON 2026-09-27 for the typed HQPlayer addresses
+# and the discovery switch only. 1.1.0 (Philippe's fork) adds the connection
+# status back onto it - but as a SNAPSHOT drawn at page load, never a poller:
+# the old page polled itself and never updated inside Material. So what must
+# never return is the polling. The rows are handed in (setStatusSource), so
+# the module still reads no player itself, and a link to the live view is
+# how a reader gets the moving numbers.
 {
     my $slurp = sub { open my $fh, '<', $_[0] or return ''; local $/; <$fh> };
     my $mod  = $slurp->('../HQPlayerBridge/Settings.pm');
     my $tmpl = $slurp->('../HQPlayerBridge/HTML/EN/plugins/HQPlayerBridge/settings/basic.html');
     ok(scalar($mod =~ /sub prefs/ && $mod =~ /addresses/ && $mod =~ /autodiscover/),
        'the settings page holds the addresses and the discovery switch');
-    ok(scalar($mod !~ /signalPath|nowPlaying|bridges\(/),
-       'and reads nothing of the signal path or the players - that is the live view');
+    ok(scalar($mod !~ /Plugins::HQPlayerBridge::Plugin::|bridges\(|nowPlaying/),
+       'and reads no player itself - its status rows are handed in');
+    ok(scalar($mod =~ /sub setStatusSource/),
+       'through setStatusSource');
     # A <script> is allowed since 2026-09-27 (the "checking" line on save);
-    # what must never come back is a poller or a link to the live page.
-    ok(scalar($tmpl !~ /setInterval|setTimeout|XMLHttpRequest|fetch\(|jsonrpc|hqplive/),
-       'and its template polls nothing and links to no live page');
+    # what must never come back is a poller.
+    ok(scalar($tmpl !~ /setInterval|setTimeout|XMLHttpRequest|fetch\(|jsonrpc/),
+       'and its template polls nothing - the status is a snapshot');
+    ok(scalar($tmpl =~ m{href="/hqplive"}),
+       'and links to the live view for the moving numbers');
 }
 
 print "-- it follows MATERIAL's theme, by LMS's own recipe --\n";

@@ -28,6 +28,8 @@ Tested on LMS 9.x against **HQPlayer Embedded 6** feeding an NAA endpoint.
 | **Skip back from HQPlayer** | Skipping back to an earlier track in HQPlayer's own playlist while it plays moves LMS to that track too | Nothing |
 | **Stable player identity** | Prefs and playlist survive HQPlayer changing IP address | Nothing |
 | **Live view** | A page of its own: what's playing, transport, volume and the signal path, updating every second in your Material theme | Nothing |
+| **Bit-perfect mode** | One switch per player: no ReplayGain, no bitrate limit, Lyrion volume fixed, HQPlayer at 0 dB - and optionally native files only. See [Bit-perfect mode](#bit-perfect-mode) | Nothing |
+| **Connection status** | Each HQPlayer's link, output mode, filter, shaper and route, on the plugin's settings page | Nothing |
 | **Restart HQPlayer from LMS** | One tap in Apps restarts HQPlayer, with your saved settings, e.g. after power-cycling your NAA endpoint | The optional restart helper on the HQPlayer machine, which needs **Python 3.7+** there |
 
 ---
@@ -168,6 +170,33 @@ Run the installer from the same folder with the uninstall option, matching how y
 | service | `sudo ./install.sh --system --uninstall` |
 
 This stops the helper and removes it from startup. Your config folder (above) is left in place; delete it if you won't reinstall. The Restart row disappears from Apps when LMS next restarts.
+
+---
+
+## Bit-perfect mode
+
+Open **Player settings → HQPlayer** for an HQPlayer player (in Material: the
+player's settings, then the HQPlayer page). Set **Bit-perfect mode** to **On**
+and save. While it is on, what leaves Lyrion for HQPlayer is the source,
+unaltered:
+
+- **No ReplayGain.** A unity gain is sent with every track. That overrides the
+  file's own tags, so HQPlayer does not apply one from them either.
+- **No bitrate limit.** Lyrion's limit is held at none, so nothing is ever
+  turned into MP3 on the way.
+- **Lyrion's volume is fixed.** The slider no longer moves HQPlayer. Switching
+  the mode on sets HQPlayer's volume to 0 dB once; HQPlayer's own volume, and
+  the endpoint's knob, stay yours to change afterwards. Switching the mode off
+  puts Lyrion's volume control back as it was.
+
+**Native files only** (a second switch, used only with bit-perfect on) skips
+anything Lyrion would convert or relay: ALAC, AAC and M4A (transcoded) and
+Deezer or radio (relayed through Lyrion's stream). Three skipped in a row stop
+the player. Left off, those still play, and the page shows their route in red.
+
+The page also lists each Lyrion setting that could change the stream, with a
+warning sign on any that does. **What this does not change:** HQPlayer's own
+processing - upsampling, filters, modulation - which is the point of HQPlayer.
 
 ---
 

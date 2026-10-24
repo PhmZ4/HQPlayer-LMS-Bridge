@@ -1132,8 +1132,15 @@ ok(!Plugins::HQPlayerBridge::Player->can('_watchForFixed'),
    'and no _watchForFixed to infer a state HQPlayer cannot be in');
 {
     my $mod = do { local (@ARGV, $/) = ('../HQPlayerBridge/Player.pm'); <> };
-    ok(scalar( $mod !~ /set\(\s*'digitalVolumeControl'/ ),
-       'the pref is READ but never SET anywhere in Player.pm');
+    # 1.1.0: ONE writer, on the user's own save of the bit-perfect switch -
+    # never inferred (see applyBitPerfect and t_bitperfect.pl). Everything
+    # outside that sub still only reads it.
+    my ($apply) = $mod =~ /\nsub applyBitPerfect \{(.*?)\n\}/s;
+    ( my $rest = $mod ) =~ s/\nsub applyBitPerfect \{.*?\n\}//s;
+    ok(scalar( $apply && $apply =~ /set\(\s*'digitalVolumeControl'/ ),
+       'the only writer is applyBitPerfect, run on the user\'s explicit save');
+    ok(scalar( $rest !~ /set\(\s*'digitalVolumeControl'/ ),
+       'the pref is READ but never SET anywhere else in Player.pm');
 }
 
 # The user's own "Volume Control: fixed" radio is honoured, and it means one

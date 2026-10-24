@@ -15,6 +15,20 @@ first paint) plus a `strings.txt` sweep - every `PLUGIN_HQPLAYER_*` key resolves
 use are built in `Settings::_savedLines`. The three beliefs the round had to kill are in **A3** so the next
 round does not re-derive them. Built as **1.0.39**.
 
+**1.1.0 (PhmZ4 fork, 2026-10-24) - bit-perfect mode, ReplayGain shown, status on the settings page.**
+Three settled rules are AMENDED, deliberately, by the fork owner's request - do not report them as regressions:
+- **`digitalVolumeControl` has ONE writer: `Player::applyBitPerfect`**, run only from `Plugin::_bitPerfectChanged`
+  on a real flip of the user's own `bitperfect` switch, and it restores the saved value on the way off.
+  The rule "the plugin never writes it" still holds for anything inferred or automatic. Pinned in `t_player.pl`
+  (fixed volume) and `t_bitperfect.pl` (undef -> 0 does nothing).
+- **Unity IS asserted in bit-perfect mode** (`_replayGain` returns 0 -> `album_gain="0.00"`). Outside it, the old
+  rule (no figure, no attribute) is unchanged.
+- **The plugin settings page shows a status SNAPSHOT** (no poller, rows handed in via `Settings::setStatusSource`)
+  and links to `/hqplive`. What must never return is the polling. `t_live.pl` asserts the new contract.
+- `canDoReplayGain` is 1: in LMS 9.1 it gates only UI (Audio page, Jive, Buttons::Settings) - checked.
+- Native-only refusal goes through `_loadFailed` with token `PLUGIN_HQPLAYER_BP_REFUSED`, deferred and
+  generation-stamped like a refused PlaylistAdd; `_handOver` holds a refused tier instead of appending it.
+
 ### DECLINED / SETTLED INDEX — GREP THIS FIRST
 
 **One grep before reporting any finding.** Find the symbol or subject in this table, then grep

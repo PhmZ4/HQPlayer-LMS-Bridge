@@ -16,7 +16,7 @@ cd "$(dirname "$0")"
 rm -rf Plugins && mkdir -p Plugins && ln -sfn ../../HQPlayerBridge Plugins/HQPlayerBridge
 
 echo "== syntax =="
-for m in Control Discovery Addresses Settings Stream Player Plugin Live; do
+for m in Control Discovery Addresses Settings PlayerSettings Stream Player Plugin Live; do
     perl -I. syncheck.pl "Plugins::HQPlayerBridge::$m"
 done
 
@@ -28,6 +28,7 @@ perl -I. t_stream.pl
 perl -I. t_plugin.pl
 perl -I. t_live.pl
 perl -I. t_settings.pl
+perl -I. t_bitperfect.pl
 python3 t_hqrestart.py   # its own log is silenced inside; a traceback must be VISIBLE
 sh -n hqrestart/install.sh && echo "  ok   the macOS/Linux installer parses"   # nothing else reads it
 python3 t_installers.py  # the installer RUNS end to end, service managers stubbed: stop/ask/start ORDER
