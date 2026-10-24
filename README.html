@@ -138,7 +138,7 @@
 <div class="card"><h4>Everything else plays too</h4><p>ALAC, AAC and M4A are converted by LMS on the way out</p><span class="needs">Needs: nothing</span></div>
 <div class="card"><h4>Streaming at full rate</h4><p>Qobuz and Tidal are fetched by HQPlayer straight from the service; Deezer and radio go through LMS</p><span class="needs">Needs: The matching service plugin</span></div>
 <div class="card"><h4>Gapless</h4><p>Library and direct streaming hand the next track over early, so HQPlayer makes the join itself</p><span class="needs">Needs: nothing</span></div>
-<div class="card"><h4>ReplayGain everywhere</h4><p>Library <em>and</em> streaming normalised using exactly the figure LMS worked out</p><span class="needs">Needs: Replay gain not set to Off</span></div>
+<div class="card"><h4>ReplayGain everywhere</h4><p>Library <em>and</em> streaming normalised using exactly the figure LMS worked out. The setting is on the player's Audio page</p><span class="needs">Needs: Replay gain not set to Off, bit-perfect mode off</span></div>
 <div class="card"><h4>Artwork on the endpoint</h4><p>Cover art reaches HQPlayer and its display, from your library or a service, served by LMS on your network at up to 600x600, and stays with its own track across a gapless hand-over</p><span class="needs">Needs: nothing</span></div>
 <div class="card"><h4>Volume, both ways</h4><p>The LMS slider moves HQPlayer, and HQPlayer's own volume moves the slider</p><span class="needs">Needs: nothing</span></div>
 <div class="card"><h4>Pause from either end</h4><p>Pausing at HQPlayer or on the endpoint's remote pauses LMS too, within a second</p><span class="needs">Needs: nothing</span></div>
@@ -166,9 +166,10 @@
 <section id="installation">
 <h2>Installation</h2>
 <p><strong>Via repository (recommended).</strong> In LMS go to <strong>Settings → Plugins → Additional Repositories</strong> and add:</p>
-<pre><code>https://simonarnold002.github.io/LMS-HQPlayer-Bridge/repo.xml</code></pre>
+<pre><code>https://raw.githubusercontent.com/PhmZ4/LMS-HQPlayer-Bridge/main/repo.xml</code></pre>
+<p>If you used the original plugin's repository before, remove it from that list so that only one of the two offers updates.</p>
 <p>Install <strong>HQPlayer Bridge</strong> from the plugin list and restart. Then open the player menu in Material — the HQPlayer instance is listed by name. Select it and play something.</p>
-<p><strong>Manual.</strong> Download <code>HQPlayerBridge.zip</code> from the <a href="https://github.com/SimonArnold002/LMS-HQPlayer-Bridge">repository</a> and unzip it so it sits as <code>Plugins/HQPlayerBridge/</code>:</p>
+<p><strong>Manual.</strong> Download <a href="https://github.com/PhmZ4/LMS-HQPlayer-Bridge/raw/main/HQPlayerBridge.zip"><code>HQPlayerBridge.zip</code></a> from this repository and unzip it so it sits as <code>Plugins/HQPlayerBridge/</code>:</p>
 <pre><code>sudo rm -rf /var/lib/squeezeboxserver/Plugins/HQPlayerBridge
 sudo unzip HQPlayerBridge.zip -d /var/lib/squeezeboxserver/Plugins/
 sudo chown -R squeezeboxserver:nogroup /var/lib/squeezeboxserver/Plugins/HQPlayerBridge
@@ -189,6 +190,20 @@ sudo systemctl restart lyrionmusicserver</code></pre>
 </li>
 <li><strong>Your choice is kept when the plugin updates.</strong> An update never switches you back to automatic or clears your list.
 </li></ul>
+<h3 id="connection-status">Connection status</h3>
+<p>The same page opens with the <strong>connection status</strong> of each HQPlayer:</p>
+<pre><code>Salon
+  Control link               Connected - 192.168.1.20:4321
+  Output mode                SDM
+  Filter                     poly-sinc-gauss-xla
+  Shaper                     ASDM7EC
+  Output transport           id 0
+  Source                     44100 Hz / 16 bit FLAC
+  Output format              DSD 11.2 MHz
+  Route of the playing track Playing the original file straight from Lyrion, untranscoded ...
+  Gain on the last track sent +0.00 dB (bit-perfect)
+  Bit-perfect mode           On</code></pre>
+<p>A link that is down, and a track that Lyrion converts or relays, are shown in red. If the bridge is still waiting for an HQPlayer, the page says so. This is a <strong>snapshot taken when the page opens</strong>: reload it to refresh, or follow its link to the live view, which updates every second.</p>
 </section>
 <section id="restarting-hqplayer-from-lms-optional">
 <h2>Restarting HQPlayer from LMS (optional)</h2>
@@ -196,13 +211,13 @@ sudo systemctl restart lyrionmusicserver</code></pre>
 <p><strong>What it is.</strong> <code>hqrestart</code> is one Python script (standard library only) in <a href="tools/hqrestart/"><code>tools/hqrestart/</code></a> of this repository. It is <strong>not part of the plugin</strong>, and playback works exactly the same without it. It listens on port <strong>8090</strong>. When asked, it restarts HQPlayer the same way it was started, as an app or as a service, on macOS or Linux (Windows is not supported). It never restarts anything by itself.</p>
 <p><strong>Only tested on macOS so far.</strong> It has been run end to end on a Mac, with HQPlayer Embedded running as an app. macOS with HQPlayer as a service, and Linux, are written and covered by automated tests, but have not yet been run on a real machine, so treat them as untried. The installer's question for your LMS server's address is new and is covered by those tests, but has not yet been run on a real install either.</p>
 <p><strong>Using it.</strong> Once the helper is running, <strong>Apps → HQPlayer Bridge</strong> shows a **Restart <em>name</em><strong> row under HQPlayer Live View. Tap it, then </strong>Restart <em>name</em> now**. It answers once HQPlayer is back, which takes about 7 seconds on a Mac.</p>
-<h3>What the helper needs</h3>
+<h3 id="what-the-helper-needs">What the helper needs</h3>
 <p><strong>Python 3.7 or later, on the HQPlayer machine.</strong> The helper is a single Python script and uses only the standard library — nothing to <code>pip install</code>. <strong>The installer never installs Python for you</strong>; if it can't find <code>python3</code> it stops and says so, leaving your system untouched.</p>
 <p><strong>On macOS, expect a prompt from Apple — not from this installer.</strong> macOS ships no Python of its own. <code>/usr/bin/python3</code> is a stub, so the first time anything runs it, macOS itself offers to install the <strong>Command Line Tools</strong>:</p>
 <blockquote><p>The "python3" command requires the command line developer tools. Would you like to install the tools now?</p></blockquote>
 <p>That dialog is Apple's. Accepting it installs the Command Line Tools (a developer package of a few hundred MB, which includes Python 3.9) and the helper then installs normally. <strong>If you would rather not have that</strong>, click <em>Not Now</em> and install Python another way first — the <a href="https://www.python.org/downloads/macos/">python.org installer</a> or <code>brew install python</code> — then run <code>./install.sh</code> again. Either is fine; the helper only needs <em>a</em> <code>python3</code> of 3.7 or later on your <code>PATH</code>.</p>
 <p><strong>On Linux, nothing is offered and nothing is installed.</strong> Practically every distribution ships Python 3 already, so there is usually nothing to do. If it is genuinely missing the installer stops with <code>python3 not found - install Python 3.7 or newer first</code>, and you install it with your package manager (<code>sudo apt install python3</code>, <code>sudo dnf install python3</code>, and so on). No equivalent of Apple's prompt exists, so a Linux install will never pull in a toolchain behind your back.</p>
-<h3>Install the helper</h3>
+<h3 id="install-the-helper">Install the helper</h3>
 <p>On the <strong>HQPlayer machine</strong>, with <strong>Python 3.7 or later</strong> (see above):</p>
 <p><strong>Step 1.</strong> Download this repository (<strong>Code → Download ZIP</strong> on GitHub) and open the <code>tools/hqrestart/</code> folder in a terminal.</p>
 <p><strong>Step 2.</strong> Run the installer that matches how HQPlayer runs there:</p>
@@ -242,7 +257,7 @@ sudo systemctl restart lyrionmusicserver</code></pre>
 </li>
 <li>The helper can also be called without LMS, with the token, e.g. from a phone shortcut. See <a href="tools/hqrestart/README.md"><code>tools/hqrestart/README.md</code></a> for that and for every config option.
 </li></ul>
-<h3>Uninstall the helper</h3>
+<h3 id="uninstall-the-helper">Uninstall the helper</h3>
 <p>Run the installer from the same folder with the uninstall option, matching how you installed it:</p>
 <table>
 <thead><tr>
@@ -269,9 +284,22 @@ sudo systemctl restart lyrionmusicserver</code></pre>
 <ul>
 <li><strong>Lyrion's volume is fixed.</strong> The slider no longer moves HQPlayer. Switching
 </li></ul>
-<p>the mode on sets HQPlayer's volume to 0 dB once; HQPlayer's own volume, and the endpoint's knob, stay yours to change afterwards. Switching the mode off puts Lyrion's volume control back as it was.</p>
+<p>the mode on sets HQPlayer's volume to 0 dB once - or to HQPlayer's own <strong>maximum volume</strong> if that is lower, so a -3 dB ceiling kept as headroom against inter-sample clipping is respected. HQPlayer's own volume, and the endpoint's knob, stay yours to change afterwards. Switching the mode off puts Lyrion's volume control back as it was.</p>
 <p><strong>Native files only</strong> (a second switch, used only with bit-perfect on) skips anything Lyrion would convert or relay: ALAC, AAC and M4A (transcoded) and Deezer or radio (relayed through Lyrion's stream). Three skipped in a row stop the player. Left off, those still play, and the page shows their route in red.</p>
-<p>The page also lists each Lyrion setting that could change the stream, with a warning sign on any that does. <strong>What this does not change:</strong> HQPlayer's own processing - upsampling, filters, modulation - which is the point of HQPlayer.</p>
+<h3 id="what-lyrion-could-change">What Lyrion could change</h3>
+<p>The page also lists each Lyrion setting that could change what reaches HQPlayer, read from where Lyrion itself reads it - ✓ when it changes nothing, ⚠ when it does. It is worked out when the page opens.</p>
+<table>
+<thead><tr>
+<th>Check</th>
+<th>✓</th>
+<th>⚠</th>
+</tr></thead>
+<tbody>
+<tr><td><strong>ReplayGain</strong></td><td>Bit-perfect on (unity sent), or ReplayGain off in Lyrion - HQPlayer may then still read the file's tags itself, if its own album-gain option is on</td><td>ReplayGain on: Lyrion's gain is sent and changes the level</td></tr>
+<tr><td><strong>Bitrate limit</strong></td><td>None: nothing is turned into MP3</td><td>A limit in kbps: anything going through Lyrion's own stream (Deezer, radio) is transcoded to MP3 to fit it. Library files and direct Qobuz/Tidal are never affected</td></tr>
+<tr><td><strong>Volume control</strong></td><td>Fixed: Lyrion's slider does not move HQPlayer</td><td>Variable: the slider sets HQPlayer's volume. The bytes still arrive untouched - HQPlayer applies the level in its own processing - but the level is not the one you may expect</td></tr>
+</tbody></table>
+<p>Below the checks, the page shows this player's connection status, including the <strong>route of the playing track</strong> (red when Lyrion converts or relays it) and the <strong>gain sent with the last track</strong>. <strong>What this does not change:</strong> HQPlayer's own processing - upsampling, filters, modulation - which is the point of HQPlayer.</p>
 </section>
 <section id="how-your-music-reaches-hqplayer">
 <h2>How your music reaches HQPlayer</h2>
@@ -290,13 +318,13 @@ sudo systemctl restart lyrionmusicserver</code></pre>
 </tbody></table>
 <p>Everything is addressed by URL, so nothing about your files needs to match between the two machines.</p>
 <p>Where a track is pre-queued, HQPlayer has the next one in its own playlist before the current ends and makes the join itself. A pre-queue HQPlayer is slow to acknowledge, or turns down outright, still reaches the next track — the bridge falls back to a normal load rather than losing it, and a stop at HQPlayer's own front end is told apart from the playlist simply running out. On the last route the next track loads when the current one finishes — about half a second, against roughly a second and a half of audio already in flight, so nothing is heard.</p>
-<p><strong>ReplayGain</strong> is sent with the track, exactly as LMS calculated it — nothing scaled or trimmed, and a <em>boost</em> goes through in full. This covers streaming, where there are no tags, and beats letting HQPlayer read library tags itself, which it does at the moment playback starts and so misses the first tracks of a fresh album. LMS's choice between album and track gain is the one you get. A track LMS has no figure for is left completely alone. If you have HQPlayer's <strong>convolution gain compensation</strong> set, that applies on top — deliberately not cancelled out.</p>
+<p><strong>ReplayGain</strong> is set on the player's <strong>Audio</strong> settings page (it was hidden before 1.1.0, although the bridge already used it). It is sent with the track, exactly as LMS calculated it — nothing scaled or trimmed, and a <em>boost</em> goes through in full. This covers streaming, where there are no tags, and beats letting HQPlayer read library tags itself, which it does at the moment playback starts and so misses the first tracks of a fresh album. LMS's choice between album and track gain is the one you get. A track LMS has no figure for is left completely alone. If you have HQPlayer's <strong>convolution gain compensation</strong> set, that applies on top — deliberately not cancelled out. In <a href="#bit-perfect-mode">bit-perfect mode</a> none of this applies: a unity gain goes with every track instead.</p>
 </section>
 <section id="volume">
 <h2>Volume</h2>
 <p>HQPlayer holds the real level in dB and decides how to split it between the endpoint's hardware attenuator and its own software gain; LMS has an 0–100 slider. The two are kept in step both ways, within about a second.</p>
 <p><strong>One LMS step is one dB, with LMS 100 being 0 dB.</strong> The range is read from HQPlayer at connect, so a ceiling below 0 dB is handled.</p>
-<p>The level you start with is <strong>HQPlayer's own</strong>, not one the plugin asserts. To stop Lyrion driving the volume at all, set <strong>Volume Control: fixed</strong> on the player's Audio settings page; the plugin honours that and never changes it for you. HQPlayer's own "fixed volume" is a <em>startup level</em>, not a lock.</p>
+<p>The level you start with is <strong>HQPlayer's own</strong>, not one the plugin asserts. To stop Lyrion driving the volume at all, set <strong>Volume Control: fixed</strong> on the player's Audio settings page; the plugin honours that and never changes it for you. The one exception is <a href="#bit-perfect-mode">bit-perfect mode</a>: switching it on sets the volume control to fixed, and switching it off puts your earlier choice back. HQPlayer's own "fixed volume" is a <em>startup level</em>, not a lock.</p>
 </section>
 <section id="seeing-what-it-s-doing">
 <h2>Seeing what it's doing</h2>
@@ -309,6 +337,7 @@ Shaper             TPDF
 Processing speed   30.3x realtime</code></pre>
 <p><strong>With more than one HQPlayer,</strong> a row of names appears above the panel and you tap the one you want to see and control. <strong>Auto</strong>, the default, follows whichever instance is playing. Your choice is remembered in that browser, and a dot marks any instance that is playing but not currently shown. Every instance's signal path is listed below either way.</p>
 <p>HQPlayer reports the filter <em>really</em> in use, so a 44.1 kHz album shows your 1x filter and a 96 kHz one your Nx filter. Source and output always describe the track actually playing — resolving what comes next never overwrites them early. The page follows Material's theme and icons and works on a phone in either orientation, and a streamed track's cover carries the service's badge, as Material shows it on its own lists (only where Material is installed). Until HQPlayer is found it says it is waiting for the player to connect. It costs HQPlayer nothing — the values are already in memory from the status stream the plugin subscribes to.</p>
+<p><strong>The plugin's settings page</strong> shows the same facts as a snapshot - see <a href="#connection-status">Connection status</a> - and each player's <strong>HQPlayer</strong> page shows its own, along with the <a href="#bit-perfect-mode">bit-perfect</a> checks.</p>
 <p><strong>The Apps entry</strong> behind it is a browse list, which Material draws once and never refreshes, so it shows HQPlayer's <strong>settings</strong> — output mode, filter, shaper, transport id — rather than moving numbers that would go stale. It reports the transport <strong>id</strong>, not your endpoint's name: HQPlayer doesn't expose the NAA name over any control command.</p>
 </section>
 <section id="known-limitations">
@@ -350,6 +379,7 @@ Processing speed   30.3x realtime</code></pre>
 <section id="licence-and-attribution">
 <h2>Licence and attribution</h2>
 <p>This plugin is released under the <strong>MIT licence</strong> — see <a href="LICENSE">LICENSE</a>.</p>
+<p>The original plugin is by <strong>CrystalGipsy</strong> (<a href="https://github.com/SimonArnold002/LMS-HQPlayer-Bridge">SimonArnold002/LMS-HQPlayer-Bridge</a>). This fork, from 1.1.0, is maintained by <strong>PhmZ4</strong>. Report problems with the 1.1.0 additions <a href="https://github.com/PhmZ4/LMS-HQPlayer-Bridge/issues">here</a>, not to the original author.</p>
 <p><strong>It is not affiliated with, endorsed by, or supported by Signalyst.</strong> For anything to do with HQPlayer itself, go to Signalyst, not here; and please don't take a problem caused by this plugin to them.</p>
 <p><strong>HQPlayer</strong> and <strong>Signalyst</strong> are trademarks of their respective owner. They are used here only to identify the software this plugin works with.</p>
 <p>The control protocol was implemented with reference to <strong>Signalyst's own <code>hqp-control</code> source</strong>, © 2011–2026 Jussi Laako, which Signalyst publish under the MIT licence. A copy is included in this repository at <code>hqp-control-601-src/</code> together with its licence (<code>COPYING</code>); it is reference material only and none of it is compiled into or shipped with the plugin. The HQPlayer Control API is offered by Signalyst for exactly this purpose — "implementing a custom GUI or other type of front-end utilizing the HQPlayer playback engine".</p>

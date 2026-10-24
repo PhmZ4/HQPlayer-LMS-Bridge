@@ -8,6 +8,19 @@ There is one **optional** helper, for a different job: restarting HQPlayer from 
 
 Tested on LMS 9.x against **HQPlayer Embedded 6** feeding an NAA endpoint.
 
+> **This is PhmZ4's fork** of [SimonArnold002/LMS-HQPlayer-Bridge](https://github.com/SimonArnold002/LMS-HQPlayer-Bridge). Version **1.1.0** adds a [bit-perfect mode](#bit-perfect-mode), shows the **ReplayGain** setting on the player's Audio page, and puts the [connection status](#connection-status) on the plugin's settings page. Everything else works as in the original. See [CHANGELOG.md](CHANGELOG.md).
+
+### En bref (français)
+
+Ce fork ajoute, en version 1.1.0 :
+
+- **Un mode bit-perfect**, dans *Réglages du lecteur → HQPlayer*. Une fois activé, ni gain ReplayGain, ni limite de débit, ni conversion MP3 ; le volume de Lyrion passe en fixe et HQPlayer est réglé une fois à 0 dB, ou à son volume maximum s'il est plus bas. Une option *Fichiers natifs uniquement* ignore ce que Lyrion convertirait (ALAC/AAC/M4A) ou relaierait (Deezer, radio).
+- **Une liste ✓/⚠** de chaque réglage de Lyrion qui pourrait modifier le flux.
+- **Le réglage ReplayGain visible** dans la page Audio du lecteur.
+- **L'état de la connexion** de chaque HQPlayer dans *Réglages → Plugins → HQPlayer Bridge*.
+
+Toutes les pages du plugin sont traduites en français.
+
 ---
 
 ## Features
@@ -21,7 +34,7 @@ Tested on LMS 9.x against **HQPlayer Embedded 6** feeding an NAA endpoint.
 | **Everything else plays too** | ALAC, AAC and M4A are converted by LMS on the way out | Nothing |
 | **Streaming at full rate** | Qobuz and Tidal are fetched by HQPlayer straight from the service; Deezer and radio go through LMS | The matching service plugin |
 | **Gapless** | Library and direct streaming hand the next track over early, so HQPlayer makes the join itself | Nothing |
-| **ReplayGain everywhere** | Library *and* streaming normalised using exactly the figure LMS worked out | Replay gain not set to Off |
+| **ReplayGain everywhere** | Library *and* streaming normalised using exactly the figure LMS worked out. The setting is on the player's Audio page | Replay gain not set to Off, bit-perfect mode off |
 | **Artwork on the endpoint** | Cover art reaches HQPlayer and its display, from your library or a service, served by LMS on your network at up to 600x600, and stays with its own track across a gapless hand-over | Nothing |
 | **Volume, both ways** | The LMS slider moves HQPlayer, and HQPlayer's own volume moves the slider | Nothing |
 | **Pause from either end** | Pausing at HQPlayer or on the endpoint's remote pauses LMS too, within a second | Nothing |
@@ -50,12 +63,14 @@ Nothing else has to be set up on either side — no shared filesystem, no matchi
 **Via repository (recommended).** In LMS go to **Settings → Plugins → Additional Repositories** and add:
 
 ```
-https://simonarnold002.github.io/LMS-HQPlayer-Bridge/repo.xml
+https://raw.githubusercontent.com/PhmZ4/LMS-HQPlayer-Bridge/main/repo.xml
 ```
+
+If you used the original plugin's repository before, remove it from that list so that only one of the two offers updates.
 
 Install **HQPlayer Bridge** from the plugin list and restart. Then open the player menu in Material — the HQPlayer instance is listed by name. Select it and play something.
 
-**Manual.** Download `HQPlayerBridge.zip` from the [repository](https://github.com/SimonArnold002/LMS-HQPlayer-Bridge) and unzip it so it sits as `Plugins/HQPlayerBridge/`:
+**Manual.** Download [`HQPlayerBridge.zip`](https://github.com/PhmZ4/LMS-HQPlayer-Bridge/raw/main/HQPlayerBridge.zip) from this repository and unzip it so it sits as `Plugins/HQPlayerBridge/`:
 
 ```bash
 sudo rm -rf /var/lib/squeezeboxserver/Plugins/HQPlayerBridge
@@ -77,6 +92,26 @@ sudo systemctl restart lyrionmusicserver
 - **A player is identified by the name set in HQPlayer, not by its address.** Delete an address and save to remove its player; add it back, or replace it with HQPlayer's new address, and you get the same player back with its settings and playlist.
 - **With addresses only, an HQPlayer whose address changes isn't followed.** Update its address in the box, or give that machine a fixed address.
 - **Your choice is kept when the plugin updates.** An update never switches you back to automatic or clears your list.
+
+### Connection status
+
+The same page opens with the **connection status** of each HQPlayer:
+
+```
+Salon
+  Control link               Connected - 192.168.1.20:4321
+  Output mode                SDM
+  Filter                     poly-sinc-gauss-xla
+  Shaper                     ASDM7EC
+  Output transport           id 0
+  Source                     44100 Hz / 16 bit FLAC
+  Output format              DSD 11.2 MHz
+  Route of the playing track Playing the original file straight from Lyrion, untranscoded ...
+  Gain on the last track sent +0.00 dB (bit-perfect)
+  Bit-perfect mode           On
+```
+
+A link that is down, and a track that Lyrion converts or relays, are shown in red. If the bridge is still waiting for an HQPlayer, the page says so. This is a **snapshot taken when the page opens**: reload it to refresh, or follow its link to the live view, which updates every second.
 
 ---
 
@@ -185,8 +220,10 @@ unaltered:
 - **No bitrate limit.** Lyrion's limit is held at none, so nothing is ever
   turned into MP3 on the way.
 - **Lyrion's volume is fixed.** The slider no longer moves HQPlayer. Switching
-  the mode on sets HQPlayer's volume to 0 dB once; HQPlayer's own volume, and
-  the endpoint's knob, stay yours to change afterwards. Switching the mode off
+  the mode on sets HQPlayer's volume to 0 dB once - or to HQPlayer's own
+  **maximum volume** if that is lower, so a -3 dB ceiling kept as headroom
+  against inter-sample clipping is respected. HQPlayer's own volume, and the
+  endpoint's knob, stay yours to change afterwards. Switching the mode off
   puts Lyrion's volume control back as it was.
 
 **Native files only** (a second switch, used only with bit-perfect on) skips
@@ -194,8 +231,21 @@ anything Lyrion would convert or relay: ALAC, AAC and M4A (transcoded) and
 Deezer or radio (relayed through Lyrion's stream). Three skipped in a row stop
 the player. Left off, those still play, and the page shows their route in red.
 
-The page also lists each Lyrion setting that could change the stream, with a
-warning sign on any that does. **What this does not change:** HQPlayer's own
+### What Lyrion could change
+
+The page also lists each Lyrion setting that could change what reaches
+HQPlayer, read from where Lyrion itself reads it - ✓ when it changes nothing,
+⚠ when it does. It is worked out when the page opens.
+
+| Check | ✓ | ⚠ |
+|---|---|---|
+| **ReplayGain** | Bit-perfect on (unity sent), or ReplayGain off in Lyrion - HQPlayer may then still read the file's tags itself, if its own album-gain option is on | ReplayGain on: Lyrion's gain is sent and changes the level |
+| **Bitrate limit** | None: nothing is turned into MP3 | A limit in kbps: anything going through Lyrion's own stream (Deezer, radio) is transcoded to MP3 to fit it. Library files and direct Qobuz/Tidal are never affected |
+| **Volume control** | Fixed: Lyrion's slider does not move HQPlayer | Variable: the slider sets HQPlayer's volume. The bytes still arrive untouched - HQPlayer applies the level in its own processing - but the level is not the one you may expect |
+
+Below the checks, the page shows this player's connection status, including
+the **route of the playing track** (red when Lyrion converts or relays it) and
+the **gain sent with the last track**. **What this does not change:** HQPlayer's own
 processing - upsampling, filters, modulation - which is the point of HQPlayer.
 
 ---
@@ -215,7 +265,7 @@ Everything is addressed by URL, so nothing about your files needs to match betwe
 
 Where a track is pre-queued, HQPlayer has the next one in its own playlist before the current ends and makes the join itself. A pre-queue HQPlayer is slow to acknowledge, or turns down outright, still reaches the next track — the bridge falls back to a normal load rather than losing it, and a stop at HQPlayer's own front end is told apart from the playlist simply running out. On the last route the next track loads when the current one finishes — about half a second, against roughly a second and a half of audio already in flight, so nothing is heard.
 
-**ReplayGain** is sent with the track, exactly as LMS calculated it — nothing scaled or trimmed, and a *boost* goes through in full. This covers streaming, where there are no tags, and beats letting HQPlayer read library tags itself, which it does at the moment playback starts and so misses the first tracks of a fresh album. LMS's choice between album and track gain is the one you get. A track LMS has no figure for is left completely alone. If you have HQPlayer's **convolution gain compensation** set, that applies on top — deliberately not cancelled out.
+**ReplayGain** is set on the player's **Audio** settings page (it was hidden before 1.1.0, although the bridge already used it). It is sent with the track, exactly as LMS calculated it — nothing scaled or trimmed, and a *boost* goes through in full. This covers streaming, where there are no tags, and beats letting HQPlayer read library tags itself, which it does at the moment playback starts and so misses the first tracks of a fresh album. LMS's choice between album and track gain is the one you get. A track LMS has no figure for is left completely alone. If you have HQPlayer's **convolution gain compensation** set, that applies on top — deliberately not cancelled out. In [bit-perfect mode](#bit-perfect-mode) none of this applies: a unity gain goes with every track instead.
 
 ---
 
@@ -225,7 +275,7 @@ HQPlayer holds the real level in dB and decides how to split it between the endp
 
 **One LMS step is one dB, with LMS 100 being 0 dB.** The range is read from HQPlayer at connect, so a ceiling below 0 dB is handled.
 
-The level you start with is **HQPlayer's own**, not one the plugin asserts. To stop Lyrion driving the volume at all, set **Volume Control: fixed** on the player's Audio settings page; the plugin honours that and never changes it for you. HQPlayer's own "fixed volume" is a *startup level*, not a lock.
+The level you start with is **HQPlayer's own**, not one the plugin asserts. To stop Lyrion driving the volume at all, set **Volume Control: fixed** on the player's Audio settings page; the plugin honours that and never changes it for you. The one exception is [bit-perfect mode](#bit-perfect-mode): switching it on sets the volume control to fixed, and switching it off puts your earlier choice back. HQPlayer's own "fixed volume" is a *startup level*, not a lock.
 
 ---
 
@@ -245,6 +295,8 @@ Processing speed   30.3x realtime
 **With more than one HQPlayer,** a row of names appears above the panel and you tap the one you want to see and control. **Auto**, the default, follows whichever instance is playing. Your choice is remembered in that browser, and a dot marks any instance that is playing but not currently shown. Every instance's signal path is listed below either way.
 
 HQPlayer reports the filter *really* in use, so a 44.1 kHz album shows your 1x filter and a 96 kHz one your Nx filter. Source and output always describe the track actually playing — resolving what comes next never overwrites them early. The page follows Material's theme and icons and works on a phone in either orientation, and a streamed track's cover carries the service's badge, as Material shows it on its own lists (only where Material is installed). Until HQPlayer is found it says it is waiting for the player to connect. It costs HQPlayer nothing — the values are already in memory from the status stream the plugin subscribes to.
+
+**The plugin's settings page** shows the same facts as a snapshot - see [Connection status](#connection-status) - and each player's **HQPlayer** page shows its own, along with the [bit-perfect](#bit-perfect-mode) checks.
 
 **The Apps entry** behind it is a browse list, which Material draws once and never refreshes, so it shows HQPlayer's **settings** — output mode, filter, shaper, transport id — rather than moving numbers that would go stale. It reports the transport **id**, not your endpoint's name: HQPlayer doesn't expose the NAA name over any control command.
 
@@ -277,6 +329,8 @@ HQPlayer reports the filter *really* in use, so a 44.1 kHz album shows your 1x f
 ## Licence and attribution
 
 This plugin is released under the **MIT licence** — see [LICENSE](LICENSE).
+
+The original plugin is by **CrystalGipsy** ([SimonArnold002/LMS-HQPlayer-Bridge](https://github.com/SimonArnold002/LMS-HQPlayer-Bridge)). This fork, from 1.1.0, is maintained by **PhmZ4**. Report problems with the 1.1.0 additions [here](https://github.com/PhmZ4/LMS-HQPlayer-Bridge/issues), not to the original author.
 
 **It is not affiliated with, endorsed by, or supported by Signalyst.** For
 anything to do with HQPlayer itself, go to Signalyst, not here; and please don't
