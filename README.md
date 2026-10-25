@@ -16,6 +16,7 @@ Tested on LMS 9.x against **HQPlayer Embedded 6** feeding an NAA endpoint.
 - **A ✓/⚠ list** of every Lyrion setting that could alter the stream, and (1.1.1) whether Lyrion touched the last track played.
 - **The ReplayGain setting is visible** on the player's Audio page.
 - **The connection status** of each HQPlayer in *Settings → Plugins → HQPlayer Bridge*.
+- (1.2.0) **HQPlayer's input and output buffers** in the live view.
 
 Every page of the plugin is also available in French.
 
@@ -289,7 +290,11 @@ Output format      96000 Hz / 24 bit PCM
 Filter             poly-sinc-gauss-long
 Shaper             TPDF
 Processing speed   30.3x realtime
+Input buffer       [█████████░░░]  81 %
+Output buffer      [███████████░]  94 %
 ```
+
+**Input buffer** is how much HQPlayer has read ahead of its decoder, **Output buffer** how much is queued for the endpoint. A bar turns red below 15% while playing: a low input buffer points at the network or the source (Lyrion, the streaming service), a low output buffer at HQPlayer's processing or the link to the NAA. Stopped or paused, an empty buffer is normal.
 
 **With more than one HQPlayer,** a row of names appears above the panel and you tap the one you want to see and control. **Auto**, the default, follows whichever instance is playing. Your choice is remembered in that browser, and a dot marks any instance that is playing but not currently shown. Every instance's signal path is listed below either way.
 

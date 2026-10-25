@@ -29,6 +29,7 @@ perl -I. t_plugin.pl
 perl -I. t_live.pl
 perl -I. t_settings.pl
 perl -I. t_bitperfect.pl
+perl -I. t_buffers.pl
 python3 t_hqrestart.py   # its own log is silenced inside; a traceback must be VISIBLE
 sh -n hqrestart/install.sh && echo "  ok   the macOS/Linux installer parses"   # nothing else reads it
 python3 t_installers.py  # the installer RUNS end to end, service managers stubbed: stop/ask/start ORDER

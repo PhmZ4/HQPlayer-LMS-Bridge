@@ -818,7 +818,7 @@ sub _signalPathQuery {
             if $b->{client};
 
         for my $k (qw( connected up source output filter shaper speed tier
-                       bitperfect gain converted )) {
+                       bitperfect gain converted in_fill in_pct out_fill out_pct )) {
             $request->addResultLoop( 'bridges_loop', $i, $k, $p->{$k} ) if defined $p->{$k};
         }
 
@@ -912,6 +912,18 @@ sub signalPathFor {
     $out{speed}  = sprintf( '%.1f%s', $c->hqPath->{process_speed},
                             cstring( $client, 'PLUGIN_HQPLAYER_SPEED' ) )
         if $has->('process_speed');
+
+    # HQPLAYER'S TWO BUFFERS (1.2.0), for the live page: a finished display
+    # string AND a 0-100 number for the bar's width, so the page never parses
+    # the string (the rule above). See _fillPct for the unit.
+    for my $b ( [ in => 'input_fill' ], [ out => 'output_fill' ] ) {
+        my ( $k, $f ) = @$b;
+        next unless $has->($f);
+        my $pct = _fillPct( $c->hqPath->{$f} );
+        next unless defined $pct;
+        $out{"${k}_pct"}  = $pct;
+        $out{"${k}_fill"} = sprintf( '%d %%', $pct );
+    }
 
     # The closest thing to "which NAA", and it is only an ID. HQPlayer's control
     # API has no way to NAME a transport, let alone enumerate the available
@@ -1128,6 +1140,21 @@ sub _extid {
     }
 
     return undef;
+}
+
+# A buffer level as 0-100, or undef if it is not a number. HQPlayer sends a
+# FRACTION (0.73 measured for input_fill); a figure above 1.5 is taken as
+# already a percentage, so an engine that ever changes unit still reads right
+# rather than pinning every bar at 100. Clamped - a bar is never wider than
+# its track.
+sub _fillPct {
+    my $v = shift;
+    return undef unless defined $v && $v =~ /^\s*-?\d*\.?\d+(?:[eE][-+]?\d+)?\s*$/;
+    $v += 0;
+    $v *= 100 if $v <= 1.5;
+    $v = 0   if $v < 0;
+    $v = 100 if $v > 100;
+    return int( $v + 0.5 );
 }
 
 sub _fmtFormat {
