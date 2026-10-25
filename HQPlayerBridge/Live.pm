@@ -125,6 +125,8 @@ sub _page {
         filter     => cstring( $c, 'PLUGIN_HQPLAYER_FILTER' ),
         shaper     => cstring( $c, 'PLUGIN_HQPLAYER_SHAPER' ),
         processing => cstring( $c, 'PLUGIN_HQPLAYER_PROCESSING' ),
+        inbuf      => cstring( $c, 'PLUGIN_HQPLAYER_INBUF' ),
+        outbuf     => cstring( $c, 'PLUGIN_HQPLAYER_OUTBUF' ),
         back       => cstring( $c, 'PLUGIN_HQPLAYER_LIVE_BACK' ),
         prev       => cstring( $c, 'PLUGIN_HQPLAYER_CTL_PREV' ),
         next       => cstring( $c, 'PLUGIN_HQPLAYER_CTL_NEXT' ),
@@ -306,6 +308,16 @@ h1 { font-size: clamp(16px, 1.3vw, 21px); margin: 0 0 2px; font-weight: 600; }
 /* The selected instance's own card, so the panel and the card below agree. */
 .card.sel { border-color: var(--accent); }
 .ok { color: var(--ok); } .bad { color: var(--bad); }
+
+/* HQPLAYER'S BUFFERS (1.2.0) - a bar and the server's own figure beside it.
+   The bar turns --bad only when a buffer runs low WHILE PLAYING: stopped or
+   paused, an empty buffer is simply idle. */
+.bufv { display: flex; align-items: center; gap: 10px; }
+.buf { flex: 1 1 auto; max-width: 260px; height: 8px; border-radius: 4px;
+       background: var(--line); overflow: hidden; }
+.buf > i { display: block; height: 100%; background: var(--accent); }
+.buf.low > i { background: var(--bad); }
+.bufn { flex: 0 0 auto; min-width: 3.5em; font-variant-numeric: tabular-nums; }
 .foot { color: var(--dim); font-size: 0.86em; display: flex; gap: 10px; align-items: center; }
 .top { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
 .top .sub { margin: 0; }
@@ -492,6 +504,8 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border: 0;
         filter:     "$L{filter}",
         shaper:     "$L{shaper}",
         processing: "$L{processing}",
+        inbuf:      "$L{inbuf}",
+        outbuf:     "$L{outbuf}",
         prev:       "$L{prev}",
         next:       "$L{next}",
         play:       "$L{play}",
@@ -514,6 +528,19 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border: 0;
         return String(s).replace(/[&<>"]/g, function (c) {
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
         });
+    }
+
+    // A buffer row. pct is the server's 0-100 NUMBER, used only for the bar's
+    // width; the text beside it is the server's finished string. LOW is under
+    // BUF_LOW while playing - stopped or paused, an empty buffer is just idle.
+    var BUF_LOW = 15;
+    function bar(k, text, pct, playing) {
+        if (text === undefined || text === null || text === '') return '';
+        var w = Math.max(0, Math.min(100, parseInt(pct, 10) || 0));
+        var low = playing && w < BUF_LOW;
+        return '<div class="row"><div class="k">' + esc(k) + '</div>' +
+               '<div class="v bufv"><div class="buf' + (low ? ' low' : '') + '"><i style="width:' + w + '%"></i></div>' +
+               '<span class="bufn' + (low ? ' bad' : '') + '">' + esc(text) + '</span></div></div>';
     }
 
     function row(k, v, cls) {
@@ -1076,6 +1103,8 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border: 0;
             html += row(L.filter,     b.filter);
             html += row(L.shaper,     b.shaper);
             html += row(L.processing, b.speed);
+            html += bar(L.inbuf,  b.in_fill,  b.in_pct,  b.np_state === 'playing');
+            html += bar(L.outbuf, b.out_fill, b.out_pct, b.np_state === 'playing');
                 html += row('', b.tier);
                 html += '</div>';
             }

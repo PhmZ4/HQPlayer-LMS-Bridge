@@ -3414,7 +3414,14 @@ sub _onStatus {
     # and not there.  HQPlayer reports the filter ACTUALLY IN USE, so a 44.1k
     # source shows the 1x filter and a 96k source the Nx one; that is the
     # honest answer to "what is it doing now", not a copy of both dropdowns.
-    for my $f (qw( active_rate active_bits active_mode active_filter active_shaper process_speed )) {
+    #
+    # input_fill / output_fill (1.2.0): HQPlayer's own INPUT buffer (what it has
+    # read ahead of the decoder) and OUTPUT buffer (what is queued for the
+    # endpoint). The vendor client reads both as floats (ControlInterface.cpp,
+    # statusIO); measured input_fill 0.73-0.94 while playing, so a FRACTION.
+    # Shown on the live page only - a snapshot of a buffer says nothing.
+    for my $f (qw( active_rate active_bits active_mode active_filter active_shaper process_speed
+                   input_fill output_fill )) {
         my $v = Plugins::HQPlayerBridge::Control::pick( $attrs, $f );
         $self->hqPath->{$f} = $v if defined $v && $v ne '';
     }

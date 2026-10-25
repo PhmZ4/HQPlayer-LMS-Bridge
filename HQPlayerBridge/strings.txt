@@ -339,3 +339,11 @@ PLUGIN_HQPLAYER_BP_CHK_ROUTE_4
 PLUGIN_HQPLAYER_BP_CHK_ROUTE_SKIPPED
 	EN	Last track: skipped by Native files only - nothing converted reached HQPlayer
 	FR	Dernier morceau : ignoré par Fichiers natifs uniquement - rien de converti n'a atteint HQPlayer
+
+PLUGIN_HQPLAYER_INBUF
+	EN	Input buffer
+	FR	Tampon d'entrée
+
+PLUGIN_HQPLAYER_OUTBUF
+	EN	Output buffer
+	FR	Tampon de sortie

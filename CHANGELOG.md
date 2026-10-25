@@ -4,6 +4,17 @@ All notable changes to **HQPlayer Bridge** are recorded here. This file records
 what users receive: one entry per release published to `main`. Per-version
 development notes live in `CLAUDE.md`.
 
+## 1.2.0 — 2026-10-25
+
+### Improvements
+
+- **HQPlayer's buffers in the live view.** Two new rows, **Input buffer**
+  (what HQPlayer has read ahead of its decoder) and **Output buffer** (what is
+  queued for the endpoint), each with a bar and a percentage, updated every
+  second from the status HQPlayer already sends. A bar turns red when its
+  buffer drops below 15% while playing; stopped or paused, an empty buffer is
+  just idle and stays neutral.
+
 ## 1.1.1 — 2026-10-24
 
 ### Improvements
