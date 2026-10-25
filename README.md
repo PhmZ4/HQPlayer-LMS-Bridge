@@ -8,9 +8,9 @@ There is one **optional** helper, for a different job: restarting HQPlayer from 
 
 Tested on LMS 9.x against **HQPlayer Embedded 6** feeding an NAA endpoint.
 
-> **This is PhmZ4's fork** of [SimonArnold002/LMS-HQPlayer-Bridge](https://github.com/SimonArnold002/LMS-HQPlayer-Bridge). Version **1.1.0** adds a [bit-perfect mode](#bit-perfect-mode), shows the **ReplayGain** setting on the player's Audio page, and puts the [connection status](#connection-status) on the plugin's settings page. Everything else works as in the original. See [CHANGELOG.md](CHANGELOG.md).
+> **This is PhmZ4's fork** of [SimonArnold002/LMS-HQPlayer-Bridge](https://github.com/SimonArnold002/LMS-HQPlayer-Bridge), currently at version **1.2.0**. It adds a [bit-perfect mode](#bit-perfect-mode), shows the **ReplayGain** setting on the player's Audio page, puts the [connection status](#connection-status) on the plugin's settings page, and shows HQPlayer's input and output buffers in the [live view](#seeing-what-its-doing). Everything else works as in the original. See [CHANGELOG.md](CHANGELOG.md).
 
-### What's new in 1.1.0
+### What's new in this fork (1.1.0 – 1.2.0)
 
 - **A bit-perfect mode**, in *Player settings → HQPlayer*. While it is on there is no ReplayGain, no bitrate limit and no MP3 conversion; Lyrion's volume is set to fixed and HQPlayer is set once to 0 dB, or to its own maximum volume if that is lower. An optional *Native files only* switch skips anything Lyrion would convert (ALAC/AAC/M4A) or relay (Deezer, radio).
 - **A ✓/⚠ list** of every Lyrion setting that could alter the stream, and (1.1.1) whether Lyrion touched the last track played.
@@ -24,25 +24,26 @@ Every page of the plugin is also available in French.
 
 ## Features
 
-| Feature | What it gives you | Needs |
+| Feature | What it gives you | What you need to do |
 |---|---|---|
 | **Appears as a real player** | Each instance shows up in LMS's player list, ready to select | Nothing |
-| **Found automatically** | Discovered on the network; nothing to configure for most setups. If discovery can't reach it, connect by its IP address instead | HQPlayer reachable from the server |
+| **Found automatically** | Discovered on the network; nothing to configure for most setups | Nothing, if HQPlayer is reachable from the server. On another subnet or VLAN: *Settings → Plugins → HQPlayer Bridge*, choose **Only at the addresses below** and type its IP address |
 | **No extra audio hop** | HQPlayer fetches the music itself — no buffer, helper or UPnP hop in between | Nothing |
-| **Your library, bit-perfect** | FLAC, WAV, AIFF, DSF/DFF, WavPack, MP3 and Ogg go over as the original file, including native DSD | Nothing |
-| **Everything else plays too** | ALAC, AAC and M4A are converted by LMS on the way out | Nothing |
-| **Streaming at full rate** | Qobuz and Tidal are fetched by HQPlayer straight from the service; Deezer and radio go through LMS | The matching service plugin |
+| **Your library, untouched** | FLAC, WAV, AIFF, DSF/DFF, WavPack, MP3 and Ogg go over as the original file, including native DSD | Nothing. To be sure no gain or other change is applied on the way, turn on **Bit-perfect mode** (below) |
+| **Everything else plays too** | ALAC, AAC and M4A are converted to FLAC by LMS on the way out | Nothing — unless **Native files only** is on, which skips them on purpose |
+| **Streaming at full rate** | Qobuz and Tidal are fetched by HQPlayer straight from the service; Deezer and radio go through LMS | Install and sign in to the service's LMS plugin. Keep *Bitrate limit* at **No limit** on the player's Audio page, or Deezer and radio are turned into MP3 (bit-perfect mode keeps it there for you) |
 | **Gapless** | Library and direct streaming hand the next track over early, so HQPlayer makes the join itself | Nothing |
-| **ReplayGain everywhere** | Library *and* streaming normalised using exactly the figure LMS worked out. The setting is on the player's Audio page | Replay gain not set to Off, bit-perfect mode off |
+| **ReplayGain everywhere** | Library *and* streaming normalised using exactly the figure LMS worked out | Choose a mode in **Player settings → Audio → Replay Gain** (shown there since 1.1.0), and leave bit-perfect mode off — it replaces every gain with unity |
 | **Artwork on the endpoint** | Cover art reaches HQPlayer and its display, from your library or a service, served by LMS on your network at up to 600x600, and stays with its own track across a gapless hand-over | Nothing |
-| **Volume, both ways** | The LMS slider moves HQPlayer, and HQPlayer's own volume moves the slider | Nothing |
+| **Volume, both ways** | The LMS slider moves HQPlayer, and HQPlayer's own volume moves the slider. HQPlayer's maximum volume is respected | Leave **Player settings → Audio → Volume Control** on *variable*. Bit-perfect mode sets it to *fixed* while it is on |
 | **Pause from either end** | Pausing at HQPlayer or on the endpoint's remote pauses LMS too, within a second | Nothing |
 | **Skip back from HQPlayer** | Skipping back to an earlier track in HQPlayer's own playlist while it plays moves LMS to that track too | Nothing |
 | **Stable player identity** | Prefs and playlist survive HQPlayer changing IP address | Nothing |
-| **Live view** | A page of its own: what's playing, transport, volume and the signal path, updating every second in your Material theme | Nothing |
-| **Bit-perfect mode** | One switch per player: no ReplayGain, no bitrate limit, Lyrion volume fixed, HQPlayer at 0 dB - and optionally native files only. See [Bit-perfect mode](#bit-perfect-mode) | Nothing |
-| **Connection status** | Each HQPlayer's link, output mode, filter, shaper and route, on the plugin's settings page | Nothing |
-| **Restart HQPlayer from LMS** | One tap in Apps restarts HQPlayer, with your saved settings, e.g. after power-cycling your NAA endpoint | The optional restart helper on the HQPlayer machine, which needs **Python 3.7+** there |
+| **Bit-perfect mode** | One switch per player: no ReplayGain, no bitrate limit, Lyrion volume fixed, HQPlayer set once to 0 dB or its own maximum. See [Bit-perfect mode](#bit-perfect-mode) | Open **Player settings → HQPlayer**, set **Bit-perfect mode** to *On* and save. Optionally set **Native files only** too. Set HQPlayer's own volume and maximum the way you want them |
+| **What Lyrion could change** | A ✓/⚠ list of ReplayGain, bitrate limit, volume control and the route of the last track. See [What Lyrion could change](#what-lyrion-could-change) | Open **Player settings → HQPlayer**. Reload the page to refresh it |
+| **Connection status** | Each HQPlayer's link, output mode, filter, shaper, transport and route, with what the bridge is still waiting for | Open **Settings → Plugins → HQPlayer Bridge**. It is a snapshot: reload to refresh, or follow its link to the live view |
+| **Live view** | What's playing, transport, volume, the signal path and HQPlayer's **input and output buffers**, updating every second in your Material theme | Open **Apps → HQPlayer Bridge → HQPlayer Live View**, the link on either settings page, or `http://<your-LMS>:9000/hqplive` |
+| **Restart HQPlayer from LMS** | One tap in Apps restarts HQPlayer, with your saved settings, e.g. after power-cycling your NAA endpoint | Install the optional restart helper on the HQPlayer machine (needs **Python 3.7+** there). See [Restarting HQPlayer from LMS](#restarting-hqplayer-from-lms-optional) |
 
 ---
 
