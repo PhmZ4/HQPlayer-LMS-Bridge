@@ -5,8 +5,8 @@
   <plugins>
     <plugin name="HQPlayerBridge" version="1.2.0" minTarget="8.0.0" maxTarget="*">
       <title lang="EN">HQPlayer Bridge</title>
-      <desc lang="EN">Presents each HQPlayer instance as a native Lyrion player over HQPlayer's own control API - no UPnP bridge and no helper in the playback path. Adds a bit-perfect mode (no ReplayGain, no bitrate limit, fixed Lyrion volume, optional native files only) and the connection status on the settings page. PhmZ4 fork.</desc>
-      <desc lang="FR">Présente chaque instance HQPlayer comme un lecteur Lyrion natif, via l'API de contrôle d'HQPlayer - sans pont UPnP ni intermédiaire dans le chemin audio. Ajoute un mode bit-perfect (sans ReplayGain, sans limite de débit, volume Lyrion fixe, fichiers natifs uniquement en option) et l'état de la connexion dans les réglages. Fork PhmZ4.</desc>
+      <desc lang="EN">Presents each HQPlayer instance as a native Lyrion player over HQPlayer's own control API - no UPnP bridge and no helper in the playback path. Adds a bit-perfect mode (no ReplayGain, no bitrate limit, fixed Lyrion volume, optional native files only), the connection status on the settings page, and HQPlayer's input and output buffers in the live view. PhmZ4 fork.</desc>
+      <desc lang="FR">Présente chaque instance HQPlayer comme un lecteur Lyrion natif, via l'API de contrôle d'HQPlayer - sans pont UPnP ni intermédiaire dans le chemin audio. Ajoute un mode bit-perfect (sans ReplayGain, sans limite de débit, volume Lyrion fixe, fichiers natifs uniquement en option), l'état de la connexion dans les réglages, et les tampons d'entrée et de sortie d'HQPlayer dans la vue en direct. Fork PhmZ4.</desc>
       <category>hardware</category>
       <url>https://raw.githubusercontent.com/PhmZ4/LMS-HQPlayer-Bridge/main/HQPlayerBridge.zip</url>
       <icon>https://raw.githubusercontent.com/PhmZ4/LMS-HQPlayer-Bridge/main/HQPlayerBridge/HTML/EN/plugins/HQPlayerBridge/html/images/HQPlayerBridgeIcon.png</icon>
