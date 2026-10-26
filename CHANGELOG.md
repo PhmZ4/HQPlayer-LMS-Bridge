@@ -4,6 +4,16 @@ All notable changes to **HQPlayer Bridge** are recorded here. This file records
 what users receive: one entry per release published to `main`. Per-version
 development notes live in `CLAUDE.md`.
 
+## 1.2.1 — 2026-10-26
+
+### Changes
+
+- **The fork is now published as `PhmZ4/HQPlayer-LMS-Bridge`**, to tell it
+  apart from the original `LMS-HQPlayer-Bridge`. The plugin repository address
+  becomes `https://raw.githubusercontent.com/PhmZ4/HQPlayer-LMS-Bridge/main/repo.xml`;
+  replace the old address in Lyrion's *Additional Repositories* list. Nothing
+  else changes.
+
 ## 1.2.0 — 2026-10-25
 
 ### Improvements

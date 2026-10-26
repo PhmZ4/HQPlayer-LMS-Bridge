@@ -8,7 +8,7 @@ There is one **optional** helper, for a different job: restarting HQPlayer from 
 
 Tested on LMS 9.x against **HQPlayer Embedded 6** feeding an NAA endpoint.
 
-> **This is PhmZ4's fork** of [SimonArnold002/LMS-HQPlayer-Bridge](https://github.com/SimonArnold002/LMS-HQPlayer-Bridge), currently at version **1.2.0**. It adds a [bit-perfect mode](#bit-perfect-mode), shows the **ReplayGain** setting on the player's Audio page, puts the [connection status](#connection-status) on the plugin's settings page, and shows HQPlayer's input and output buffers in the [live view](#seeing-what-its-doing). Everything else works as in the original. See [CHANGELOG.md](CHANGELOG.md).
+> **This is PhmZ4's fork** of [SimonArnold002/LMS-HQPlayer-Bridge](https://github.com/SimonArnold002/LMS-HQPlayer-Bridge), currently at version **1.2.1**, published as **HQPlayer-LMS-Bridge** to keep it apart from the original. It adds a [bit-perfect mode](#bit-perfect-mode), shows the **ReplayGain** setting on the player's Audio page, puts the [connection status](#connection-status) on the plugin's settings page, and shows HQPlayer's input and output buffers in the [live view](#seeing-what-its-doing). Everything else works as in the original. See [CHANGELOG.md](CHANGELOG.md).
 
 ### What's new in this fork (1.1.0 – 1.2.0)
 
@@ -63,14 +63,14 @@ Nothing else has to be set up on either side — no shared filesystem, no matchi
 **Via repository (recommended).** In LMS go to **Settings → Plugins → Additional Repositories** and add:
 
 ```
-https://raw.githubusercontent.com/PhmZ4/LMS-HQPlayer-Bridge/main/repo.xml
+https://raw.githubusercontent.com/PhmZ4/HQPlayer-LMS-Bridge/main/repo.xml
 ```
 
-If you used the original plugin's repository before, remove it from that list so that only one of the two offers updates.
+If you used the original plugin's repository, or this fork under its earlier name (`.../PhmZ4/LMS-HQPlayer-Bridge/...`), remove that entry so that only one source offers updates.
 
 Install **HQPlayer Bridge** from the plugin list and restart. Then open the player menu in Material — the HQPlayer instance is listed by name. Select it and play something.
 
-**Manual.** Download [`HQPlayerBridge.zip`](https://github.com/PhmZ4/LMS-HQPlayer-Bridge/raw/main/HQPlayerBridge.zip) from this repository and unzip it so it sits as `Plugins/HQPlayerBridge/`:
+**Manual.** Download [`HQPlayerBridge.zip`](https://github.com/PhmZ4/HQPlayer-LMS-Bridge/raw/main/HQPlayerBridge.zip) from this repository and unzip it so it sits as `Plugins/HQPlayerBridge/`:
 
 ```bash
 sudo rm -rf /var/lib/squeezeboxserver/Plugins/HQPlayerBridge
@@ -335,7 +335,7 @@ HQPlayer reports the filter *really* in use, so a 44.1 kHz album shows your 1x f
 
 This plugin is released under the **MIT licence** — see [LICENSE](LICENSE).
 
-The original plugin is by **CrystalGipsy** ([SimonArnold002/LMS-HQPlayer-Bridge](https://github.com/SimonArnold002/LMS-HQPlayer-Bridge)). This fork, from 1.1.0, is maintained by **PhmZ4**. Report problems with the 1.1.0 additions [here](https://github.com/PhmZ4/LMS-HQPlayer-Bridge/issues), not to the original author.
+The original plugin is by **CrystalGipsy** ([SimonArnold002/LMS-HQPlayer-Bridge](https://github.com/SimonArnold002/LMS-HQPlayer-Bridge)). This fork, from 1.1.0, is maintained by **PhmZ4**. Report problems with the 1.1.0 additions [here](https://github.com/PhmZ4/HQPlayer-LMS-Bridge/issues), not to the original author.
 
 **It is not affiliated with, endorsed by, or supported by Signalyst.** For
 anything to do with HQPlayer itself, go to Signalyst, not here; and please don't
