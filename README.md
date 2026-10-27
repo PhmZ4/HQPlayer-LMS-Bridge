@@ -8,11 +8,11 @@ There is one **optional** helper, for a different job: restarting HQPlayer from 
 
 Tested on LMS 9.x against **HQPlayer Embedded 6** feeding an NAA endpoint.
 
-> **This is PhmZ4's fork** of [SimonArnold002/LMS-HQPlayer-Bridge](https://github.com/SimonArnold002/LMS-HQPlayer-Bridge), currently at version **1.2.1**, published as **HQPlayer-LMS-Bridge** to keep it apart from the original. It adds a [bit-perfect mode](#bit-perfect-mode), shows the **ReplayGain** setting on the player's Audio page, puts the [connection status](#connection-status) on the plugin's settings page, and shows HQPlayer's input and output buffers in the [live view](#seeing-what-its-doing). Everything else works as in the original. See [CHANGELOG.md](CHANGELOG.md).
+> **This is PhmZ4's fork** of [SimonArnold002/LMS-HQPlayer-Bridge](https://github.com/SimonArnold002/LMS-HQPlayer-Bridge), currently at version **1.3.0**, published as **HQPlayer-LMS-Bridge** to keep it apart from the original. It adds a [bit-perfect mode](#bit-perfect-mode), shows the **ReplayGain** setting on the player's Audio page, puts the [connection status](#connection-status) on the plugin's settings page, and shows HQPlayer's input and output buffers in the [live view](#seeing-what-its-doing). Everything else works as in the original. See [CHANGELOG.md](CHANGELOG.md).
 
 ### What's new in this fork (1.1.0 – 1.2.0)
 
-- **A bit-perfect mode**, in *Player settings → HQPlayer*. While it is on there is no ReplayGain, no bitrate limit and no MP3 conversion; Lyrion's volume is set to fixed and HQPlayer is set once to 0 dB, or to its own maximum volume if that is lower. An optional *Native files only* switch skips anything Lyrion would convert (ALAC/AAC/M4A) or relay (Deezer, radio).
+- **A bit-perfect mode**, in *Player settings → HQPlayer*. While it is on there is no ReplayGain, no bitrate limit and no MP3 conversion; Lyrion's volume is set to fixed and HQPlayer is set once to 0 dB, or to its own maximum volume if that is lower. An optional *Native files only* switch skips anything Lyrion would convert (ALAC/AAC/M4A, or a relayed stream it transcodes). Since 1.3.0, a Qobuz FLAC that Lyrion relays without conversion counts as native.
 - **A ✓/⚠ list** of every Lyrion setting that could alter the stream, and (1.1.1) whether Lyrion touched the last track played.
 - **The ReplayGain setting is visible** on the player's Audio page.
 - **The connection status** of each HQPlayer in *Settings → Plugins → HQPlayer Bridge*.
@@ -31,7 +31,7 @@ Every page of the plugin is also available in French.
 | **No extra audio hop** | HQPlayer fetches the music itself — no buffer, helper or UPnP hop in between | Nothing |
 | **Your library, untouched** | FLAC, WAV, AIFF, DSF/DFF, WavPack, MP3 and Ogg go over as the original file, including native DSD | Nothing. To be sure no gain or other change is applied on the way, turn on **Bit-perfect mode** (below) |
 | **Everything else plays too** | ALAC, AAC and M4A are converted to FLAC by LMS on the way out | Nothing — unless **Native files only** is on, which skips them on purpose |
-| **Streaming at full rate** | Qobuz and Tidal are fetched by HQPlayer straight from the service; Deezer and radio go through LMS | Install and sign in to the service's LMS plugin. Keep *Bitrate limit* at **No limit** on the player's Audio page, or Deezer and radio are turned into MP3 (bit-perfect mode keeps it there for you) |
+| **Streaming at full rate** | Qobuz and Tidal are fetched by HQPlayer straight from the service; Deezer and radio go through LMS. A FLAC relayed by LMS without conversion is still the original file | Install and sign in to the service's LMS plugin. Keep *Bitrate limit* at **No limit** on the player's Audio page, or relayed streams are turned into MP3 (bit-perfect mode keeps it there for you). For Qobuz/Tidal to be fetched directly and pre-queued, keep **Settings → Advanced → Network → Streaming mode for HTTP(S)** on *Normal streaming* |
 | **Gapless** | Library and direct streaming hand the next track over early, so HQPlayer makes the join itself | Nothing |
 | **ReplayGain everywhere** | Library *and* streaming normalised using exactly the figure LMS worked out | Choose a mode in **Player settings → Audio → Replay Gain** (shown there since 1.1.0), and leave bit-perfect mode off — it replaces every gain with unity |
 | **Artwork on the endpoint** | Cover art reaches HQPlayer and its display, from your library or a service, served by LMS on your network at up to 600x600, and stays with its own track across a gapless hand-over | Nothing |
@@ -227,9 +227,21 @@ unaltered:
   puts Lyrion's volume control back as it was.
 
 **Native files only** (a second switch, used only with bit-perfect on) skips
-anything Lyrion would convert or relay: ALAC, AAC and M4A (transcoded) and
-Deezer or radio (relayed through Lyrion's stream). Three skipped in a row stop
-the player. Left off, those still play, and the page shows their route in red.
+anything Lyrion would actually **convert**: ALAC, AAC and M4A (transcoded), and
+any stream Lyrion relays *and* transcodes by its File Types rules. Three skipped
+in a row stop the player. Left off, those still play, and the page shows their
+route in red.
+
+**A relay is not a conversion.** Qobuz and Tidal are normally fetched by
+HQPlayer straight from the service. When Lyrion will not allow that - its
+*Streaming mode for HTTP(S)* (Settings → Advanced → Network) is not *Normal
+streaming*, or a seek needs a FLAC header - the track goes through Lyrion's own
+stream instead. If Lyrion's own decision for it is the passthrough rule (`flc
+flc * *` → `-`, the default), the bytes are the service's original FLAC, and
+since 1.3.0 the bridge treats that as native: it plays under *Native files
+only* and shows a ✓. The only cost is that such tracks are not pre-queued for a
+gapless join. Set the streaming mode back to *Normal streaming* to have
+HQPlayer fetch Qobuz directly again; the page tells you when it is not.
 
 ### What Lyrion could change
 
@@ -242,7 +254,8 @@ HQPlayer, read from where Lyrion itself reads it - ✓ when it changes nothing,
 | **ReplayGain** | Bit-perfect on (unity sent), or ReplayGain off in Lyrion - HQPlayer may then still read the file's tags itself, if its own album-gain option is on | ReplayGain on: Lyrion's gain is sent and changes the level |
 | **Bitrate limit** | None: nothing is turned into MP3 | A limit in kbps: anything going through Lyrion's own stream (Deezer, radio) is transcoded to MP3 to fit it. Library files and direct Qobuz/Tidal are never affected |
 | **Volume control** | Fixed: Lyrion's slider does not move HQPlayer | Variable: the slider sets HQPlayer's volume. The bytes still arrive untouched - HQPlayer applies the level in its own processing - but the level is not the one you may expect |
-| **Last track** | The original file, or a stream HQPlayer fetched straight from the service - or a track *Native files only* skipped, so nothing converted reached HQPlayer. A neutral – means nothing has played since HQPlayer connected | Lyrion transcoded it (ALAC, AAC, M4A) or relayed it through its own stream (Deezer, radio) |
+| **Last track** | The original file, a stream HQPlayer fetched straight from the service, a stream Lyrion relayed **without conversion** - or a track *Native files only* skipped, so nothing converted reached HQPlayer. A neutral – means nothing has played since HQPlayer connected | Lyrion transcoded it (ALAC, AAC, M4A), or relayed it and transcoded it on the way |
+| **Streaming mode for HTTP(S)** | Shown only when it is not *Normal streaming*, as information (–): Qobuz and Tidal are then relayed by Lyrion. Still bit-perfect when passed through, but not pre-queued | - |
 
 The first three are settings; the last is what actually happened to the track
 playing, or last played. Below the checks, the page shows this player's

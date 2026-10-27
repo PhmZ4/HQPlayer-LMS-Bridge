@@ -312,5 +312,107 @@ is( $sig->{converted}, '0', 'a direct stream is not' );
 ok( scalar( $sig->{gain} =~ /none sent/ ), 'and no gain is said as such' );
 is( $sig->{bitperfect}, 'Off', 'with the mode off' );
 
+print "-- a relay without conversion is native (1.3.0) --\n";
+require Slim::Player::TranscodingHelper;
+{
+    package Slim::Player::Song;           # declared, so isa() resolves quietly
+    sub _stub {}
+    package FakeRelaySong;
+    our @ISA = ('Slim::Player::Song');    # getConvertCommand2 only takes a real Song
+    sub new { my ($c,%a) = @_; bless { want => 'flc', %a }, $c }
+    sub wantFormat { $_[0]{want} }
+    sub seekdata   { $_[0]{seek} }
+    sub canSeek    { $_[0]{canseek} // 1 }
+    sub currentTrackHandler { 'FakeRemoteHandler' }
+    sub currentTrack { FakeTrack->new({ url => 'qobuz://123.flac', id => -9, ct => 'flc' }) }
+    sub directstream { 0 } sub streamUrl { '' } sub replayGain { undef } sub streamformat { 'flc' }
+    package FakeRemoteHandler;
+    sub isRemote { 1 }
+}
+my $TH = 'Slim::Player::TranscodingHelper';
+is( join( ',', map { Plugins::HQPlayerBridge::Player::tierConverts(@$_) } [1], [3], [3,1], [4], [4,1], [5] ),
+    '0,1,1,1,0,0', 'tier 4 is a conversion unless relayNative; tier 3 always is; 1 and 5 never' );
+
+$Slim::Player::TranscodingHelper::ANSWER = { command => '-', streamformat => 'flc' };
+@Slim::Player::TranscodingHelper::CALLS = ();
+is( $c->_relayIsPassthrough( FakeRelaySong->new ), '1', 'LMS\'s passthrough rule (command "-") for FLAC: native' );
+my $call = $Slim::Player::TranscodingHelper::CALLS[0] || [];
+is( join( ',', $call->[1] // '', @{ $call->[2] || [] }, '|', @{ $call->[4] || [] } ), 'flc,I,R,|',
+    'it asks LMS the question Song::open asks: wanted format, streaming modes I and R, no seek option' );
+
+$Slim::Player::TranscodingHelper::ANSWER = { command => '[flac] -dcs ... | [sox] ...', streamformat => 'flc' };
+is( $c->_relayIsPassthrough( FakeRelaySong->new ), '0', 'a flac -> flac TRANSCODE (File Types rule) is not native' );
+$Slim::Player::TranscodingHelper::ANSWER = { command => '[flac] ... | [lame] ...', streamformat => 'mp3' };
+is( $c->_relayIsPassthrough( FakeRelaySong->new ), '0', 'nor is one to MP3' );
+$Slim::Player::TranscodingHelper::ANSWER = { command => '-', streamformat => 'flc' };
+@Slim::Player::TranscodingHelper::CALLS = ();
+is( $c->_relayIsPassthrough( FakeRelaySong->new( want => 'aac' ) ), '0', 'a passthrough of a format HQPlayer cannot decode is not native' );
+is( scalar @Slim::Player::TranscodingHelper::CALLS, '0', 'and LMS is not even asked' );
+$Slim::Player::TranscodingHelper::ANSWER = sub { die "boom\n" };
+is( $c->_relayIsPassthrough( FakeRelaySong->new ), '0', 'a helper that dies is NOT proof of an untouched stream' );
+is( $c->_relayIsPassthrough( bless {}, 'NotASong' ), '0', 'nor is something that is not a Song' );
+
+$Slim::Player::TranscodingHelper::ANSWER = { command => '-', streamformat => 'flc' };
+@Slim::Player::TranscodingHelper::CALLS = ();
+$c->_relayIsPassthrough( FakeRelaySong->new( seek => { timeOffset => 42 }, canseek => 2 ) );
+$call = $Slim::Player::TranscodingHelper::CALLS[0] || [];
+is( join( ',', @{ $call->[2] || [] }, '|', @{ $call->[4] || [] } ), 'R,|,T',
+    'a transcoder seek asks without mode I and with option T, as Song::open does' );
+
+# Through the load itself: a Qobuz FLAC relayed (no direct stream) under
+# Native files only.
+$pp->client($c)->set( 'bitperfect', 1 ); $pp->client($c)->set( 'nativeonly', 1 );
+{
+    my $lc3 = FakeController->new;
+    $c->controller($lc3);
+    Slim::Utils::Timers::_reset();
+
+    $Slim::Player::TranscodingHelper::ANSWER = { command => '-', streamformat => 'flc' };
+    $lc3->{song} = FakeRelaySong->new;
+    @sent = ();
+    $c->play({ controller => $lc3 });
+    is( $c->hqTier, '4', 'a Qobuz FLAC that LMS will not direct-stream goes through the relay' );
+    is( $c->hqRelayNative, '1', 'recognised as a passthrough' );
+    ok( scalar( grep { /PlaylistAdd/ } @sent ), 'and under Native files only it is PLAYED, not skipped' );
+    is( $c->hqRefusedTier, '(undef)', 'nothing refused' );
+    my $sig = Plugins::HQPlayerBridge::Plugin::signalPathFor( undef, { client => $c, instance => { ip => 'x' } } );
+    is( $sig->{converted}, '0', 'the status does not mark it as converted' );
+    ok( scalar( $sig->{tier} =~ /WITHOUT conversion/ ), 'and its route says relayed without conversion' );
+    my %q; $PS->handler( $c, \%q );
+    is( $q{hqp_checks}[3]{ok}, '1', 'the 4th check is a tick' );
+    ok( scalar( $q{hqp_checks}[3]{text} =~ /without any conversion/ ), 'saying so' );
+
+    $Slim::Player::TranscodingHelper::ANSWER = { command => '[flac] | [sox]', streamformat => 'flc' };
+    @sent = ();
+    $c->play({ controller => $lc3 });
+    is( $c->hqRelayNative, '0', 'the same relay WITH a transcode is not native' );
+    ok( scalar( !grep { /PlaylistAdd/ } @sent ), 'and is refused under Native files only' );
+    Slim::Utils::Timers::_reset();
+
+    # A hand-over resolving a converted next track must not change what the
+    # PLAYING track's relay flag says.
+    $c->hqTier(4); $c->hqRelayNative(1);
+    $c->hqStarted(1); $c->hqPlayAck(1); $c->hqWanted('play');
+    $c->_handOver( FakeRelaySong->new, undef );
+    is( $c->hqRelayNative, '1', 'resolving the next track leaves the playing track\'s relay flag alone' );
+    $c->hqNext(undef);
+}
+$pp->client($c)->set( 'bitperfect', 0 ); $pp->client($c)->set( 'nativeonly', 0 );
+
+print "-- HTTP(S) streaming mode (1.3.0) --\n";
+{
+    my %q;
+    $sp->set( 'useEnhancedHTTP', 0 );
+    $PS->handler( $c, \%q );
+    ok( scalar( !grep { $_->{text} =~ /Streaming mode for HTTP/ } @{ $q{hqp_checks} } ), 'Normal streaming: no line' );
+    %q = ();
+    $sp->set( 'useEnhancedHTTP', 1 );
+    $PS->handler( $c, \%q );
+    my ($h) = grep { $_->{text} =~ /Streaming mode for HTTP/ } @{ $q{hqp_checks} };
+    ok( $h, 'Persistent mode: the page says why Qobuz is relayed' );
+    is( $h && $h->{ok}, '2', 'as information, not a warning - the bytes are not changed' );
+    $sp->set( 'useEnhancedHTTP', 0 );
+}
+
 printf "\n%d passed, %d failed\n",$pass,$fail;
 exit($fail?1:0);

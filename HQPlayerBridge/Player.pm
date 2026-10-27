@@ -50,7 +50,7 @@ __PACKAGE__->mk_accessor( 'rw', qw(
     hqNext hqArmNext hqTrackNo hqTrackSerial hqStaleRun hqStartedAt hqFailRun
     hqItems hqSkipPending hqUnstopped
     hqArt
-    hqGainSent hqRefusedTier
+    hqGainSent hqRefusedTier hqRelayNative
 ) );
 
 my $log        = logger('plugin.hqplayerbridge');
@@ -569,6 +569,14 @@ sub _resolveURL {
     # socket, and arming a hand-over would move LMS on to the next song's source
     # while HQPlayer is still pulling this one. _armNextTrack holds it instead.
     $self->hqTier( 4 );
+
+    # A RELAY IS NOT NECESSARILY A CONVERSION (1.3.0). When LMS's own decision
+    # for this song is the passthrough rule (`flc flc * *` -> `-`) and the
+    # format is one HQPlayer decodes, what goes down this socket is the
+    # SERVICE'S OWN FILE, byte for byte: Qobuz FLAC relayed because direct
+    # streaming was refused (HTTP(S) streaming mode not "Normal", a seek that
+    # needs a FLAC header, a synced player). Such a relay counts as native.
+    $self->hqRelayNative( $self->_relayIsPassthrough($song) );
 
     my $url = Plugins::HQPlayerBridge::Stream->urlFor( $self, $base, $song );
 
@@ -1385,7 +1393,7 @@ sub _startTrack {
     # a message and FAIL_LIMIT still stops a run of them. The Stop and the
     # PlaylistClear still go out: a skip onto a refused track must not leave
     # the previous one playing under it.
-    if ( $self->_refuses( $self->hqTier || 0 ) ) {
+    if ( $self->_refuses( $self->hqTier || 0, $self->hqRelayNative ) ) {
 
         # The tier of a track that was REFUSED, so the player page can say
         # nothing converted reached HQPlayer - hqTier now describes a track
@@ -1469,15 +1477,20 @@ sub _handOver {
     # track's tier: the answer below may not be for the same tier at all, and
     # until the hand-over actually happens hqTier still describes what is
     # playing.
-    my $tier = $self->hqTier;
-    my $url  = $self->_resolveURL($song);
+    my $tier   = $self->hqTier;
+    my $native = $self->hqRelayNative;
+    my $url    = $self->_resolveURL($song);
 
     my $newTier = $self->hqTier || 0;
 
     # NATIVE ONLY: a track LMS would convert is never appended. It is held
     # like tier 4 below, so it reaches _startTrack - the one place it is
     # refused - instead of slipping into HQPlayer's playlist behind our back.
-    my $refuse = $self->_refuses($newTier);
+    my $refuse = $self->_refuses( $newTier, $self->hqRelayNative );
+
+    # The relay flag, like the tier, describes the track STILL PLAYING until
+    # the hand-over happens - _resolveURL above set it for the next one.
+    $self->hqRelayNative($native);
 
     if ( !$refuse && ( $newTier == 1 || $newTier == 3 || $newTier == 5 ) ) {
         # Resolving the queued item must not change facts about the item still
@@ -2078,17 +2091,68 @@ sub nativeOnly {
     return ( $self->bitPerfect && $pluginPrefs->client($self)->get('nativeonly') ) ? 1 : 0;
 }
 
-# Does LMS itself touch this tier's bytes? 3 transcodes, 4 relays (and may
-# transcode, by the server's File Types rules). 1 and 5 never. Callable as a
-# function or a method - the tier is always the last argument.
+# Does LMS itself alter this track's bytes? A FUNCTION: ( tier, relayNative ).
+#   1  original file              never
+#   3  local transcode            always
+#   4  relayed through LMS        unless relayNative - a passthrough of a
+#                                 format HQPlayer decodes (_relayIsPassthrough)
+#   5  direct from the service    never
 sub tierConverts {
-    my $tier = pop || 0;
-    return ( $tier == 3 || $tier == 4 ) ? 1 : 0;
+    my ( $tier, $relayNative ) = @_;
+    $tier ||= 0;
+    return 1 if $tier == 3;
+    return $relayNative ? 0 : 1 if $tier == 4;
+    return 0;
+}
+
+# The same answer for the track this player is playing, or last loaded.
+sub routeConverts {
+    my $self = shift;
+    return tierConverts( $self->hqTier, $self->hqRelayNative );
 }
 
 sub _refuses {
-    my ( $self, $tier ) = @_;
-    return ( $self->nativeOnly && tierConverts($tier) ) ? 1 : 0;
+    my ( $self, $tier, $relayNative ) = @_;
+    return ( $self->nativeOnly && tierConverts( $tier, $relayNative ) ) ? 1 : 0;
+}
+
+# Would LMS relay this song's bytes UNCHANGED? Asks LMS's own transcoding
+# table the same question Song::open asked when it opened the song (same
+# helper, same stream modes, same seek option), so the answer is LMS's, not a
+# guess: the passthrough command is the literal `-`. And only for a format
+# HQPlayer decodes - a passthrough of something it cannot play would not be
+# "native" in any useful sense. Any failure answers NO: not proven untouched.
+sub _relayIsPassthrough {
+    my ( $self, $song ) = @_;
+
+    my $ok = eval {
+        return 0 unless ref $song && $song->isa('Slim::Player::Song');
+
+        my $type = $song->wantFormat
+            || Slim::Music::Info::contentType( $song->currentTrack->url );
+        return 0 unless $type && $HQP_PLAYS{$type};
+
+        my $seek  = $song->seekdata;
+        my $tseek = $seek && $seek->{timeOffset} && ( $song->canSeek || 0 ) == 2;
+
+        my @modes = ( $tseek ? () : 'I' );
+        my $handler = $song->currentTrackHandler;
+        push @modes, ( $handler && $handler->isRemote ) ? 'R' : 'F';
+
+        # A server built without transcoding has no table to ask: Song::open
+        # then uses the passthrough command for everything it plays.
+        return 1 if main->can('TRANSCODING') && !main->TRANSCODING;
+
+        require Slim::Player::TranscodingHelper;
+
+        my ($tc) = Slim::Player::TranscodingHelper::getConvertCommand2(
+            $song, $type, \@modes, [], [ $tseek ? 'T' : () ] );
+
+        return ( $tc && ( $tc->{command} // '' ) eq '-'
+                 && $HQP_PLAYS{ $tc->{streamformat} // $type } ) ? 1 : 0;
+    };
+
+    return $ok ? 1 : 0;
 }
 
 # TRAP: setTimer calls back as ($obj, @args) - see _startDeadline.

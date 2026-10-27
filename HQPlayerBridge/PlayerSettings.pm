@@ -132,8 +132,19 @@ sub beforeRender {
         push @checks, { ok => 2, text => $s->('PLUGIN_HQPLAYER_BP_CHK_ROUTE_NONE') };
     }
     else {
-        $add->( !Plugins::HQPlayerBridge::Player::tierConverts($tier),
-            $s->( 'PLUGIN_HQPLAYER_BP_CHK_ROUTE_' . $tier ) );
+        my $native = $client->can('hqRelayNative') ? $client->hqRelayNative : 0;
+        $add->( !Plugins::HQPlayerBridge::Player::tierConverts( $tier, $native ),
+            $s->( 'PLUGIN_HQPLAYER_BP_CHK_ROUTE_' . $tier . ( $tier == 4 && $native ? 'N' : '' ) ) );
+    }
+
+    # 5. HTTP(S) STREAMING MODE (1.3.0) - not a change to the bytes, so it is
+    # INFORMATION, never a warning: anything but "Normal streaming" makes LMS
+    # refuse direct streaming (Protocols::HTTP::canDirectStream ->
+    # canEnhanceHTTP), so Qobuz and Tidal are relayed through Lyrion instead
+    # of fetched by HQPlayer itself - still bit-perfect when passed through,
+    # but without the pre-queued gapless join. Shown only when it is set.
+    if ( preferences('server')->get('useEnhancedHTTP') ) {
+        push @checks, { ok => 2, text => $s->('PLUGIN_HQPLAYER_BP_CHK_HTTPMODE') };
     }
 
     $params->{hqp_checks} = \@checks;
