@@ -939,6 +939,7 @@ sub signalPathFor {
           $tier == 1 ? 'PLUGIN_HQPLAYER_TIER1'
         : $tier == 3 ? 'PLUGIN_HQPLAYER_TIER3'
         : $tier == 5 ? 'PLUGIN_HQPLAYER_TIER5'
+        : ( $c->can('hqRelayNative') && $c->hqRelayNative ) ? 'PLUGIN_HQPLAYER_TIER4N'
         :              'PLUGIN_HQPLAYER_TIER4' ) if $tier;
 
     # BIT-PERFECT (1.1.0). The mode, the gain the last item handed over
@@ -958,7 +959,8 @@ sub signalPathFor {
         : cstring( $client, 'PLUGIN_HQPLAYER_GAIN_NONE' )
         if $tier;
 
-    $out{converted} = Plugins::HQPlayerBridge::Player::tierConverts($tier) if $tier;
+    $out{converted} = Plugins::HQPlayerBridge::Player::tierConverts( $tier,
+        $c->can('hqRelayNative') ? $c->hqRelayNative : 0 ) if $tier;
 
     return \%out;
 }

@@ -63,6 +63,10 @@ PLUGIN_HQPLAYER_TIER4
 	EN	Playing through the Lyrion player stream, used for radio and for services that cannot hand out a direct link. One stream per player, so track joins are not pre-queued.
 	FR	Lecture via le flux du lecteur Lyrion, utilisé pour la radio et les services sans lien direct. Un seul flux par lecteur, les enchaînements ne sont pas préchargés.
 
+PLUGIN_HQPLAYER_TIER4N
+	EN	Playing through the Lyrion player stream, relayed WITHOUT conversion - the original file from the service, bit for bit. One stream per player, so track joins are not pre-queued.
+	FR	Lecture via le flux du lecteur Lyrion, relayé SANS conversion - le fichier original du service, bit pour bit. Un seul flux par lecteur, les enchaînements ne sont pas préchargés.
+
 PLUGIN_HQPLAYER_TIER5
 	EN	Playing a streaming service directly - HQPlayer fetches the service's own URL, with no Lyrion proxy or transcode in between. Pre-queued, so track joins stay seamless.
 	FR	Lecture directe d'un service de streaming - HQPlayer récupère l'URL du service lui-même, sans relais ni transcodage par Lyrion. Préchargé, les enchaînements restent sans blanc.
@@ -261,12 +265,12 @@ PLUGIN_HQPLAYER_NATIVE_TITLE
 	FR	Fichiers natifs uniquement
 
 PLUGIN_HQPLAYER_NATIVE_DESC
-	EN	Used only while bit-perfect mode is on. Lyrion never touches files HQPlayer decodes itself (FLAC, WAV, AIFF, DSF/DFF, WavPack, MP3, Ogg) or Qobuz and Tidal streamed directly. When on, anything else is skipped instead of played: ALAC, AAC and M4A, which Lyrion would transcode, and Deezer or radio, which go through Lyrion's own stream. Three skipped in a row stop the player. When off, those still play and the status shows the route in red.
-	FR	Utilisé seulement quand le mode bit-perfect est activé. Lyrion ne touche jamais aux fichiers qu'HQPlayer décode lui-même (FLAC, WAV, AIFF, DSF/DFF, WavPack, MP3, Ogg) ni à Qobuz et Tidal lus en direct. Une fois activé, tout le reste est ignoré au lieu d'être lu : ALAC, AAC et M4A, que Lyrion transcoderait, ainsi que Deezer et la radio, qui passent par le flux de Lyrion. Trois morceaux ignorés d'affilée arrêtent le lecteur. Désactivé, ils restent lus et l'état affiche la route en rouge.
+	EN	Used only while bit-perfect mode is on. Lyrion never touches files HQPlayer decodes itself (FLAC, WAV, AIFF, DSF/DFF, WavPack, MP3, Ogg), Qobuz and Tidal streamed directly, or a stream it relays without any conversion - a Qobuz FLAC relayed by Lyrion is still the original file. When on, anything Lyrion would actually CONVERT is skipped instead of played: ALAC, AAC and M4A, which it transcodes, and any relayed stream its File Types rules transcode. Three skipped in a row stop the player. When off, those still play and the status shows the route in red.
+	FR	Utilisé seulement quand le mode bit-perfect est activé. Lyrion ne touche jamais aux fichiers qu'HQPlayer décode lui-même (FLAC, WAV, AIFF, DSF/DFF, WavPack, MP3, Ogg), ni à Qobuz et Tidal lus en direct, ni à un flux qu'il relaie sans aucune conversion - un FLAC Qobuz relayé par Lyrion reste le fichier original. Une fois activé, tout ce que Lyrion CONVERTIRAIT réellement est ignoré au lieu d'être lu : ALAC, AAC et M4A, qu'il transcode, et tout flux relayé que ses règles Types de fichiers transcodent. Trois morceaux ignorés d'affilée arrêtent le lecteur. Désactivé, ils restent lus et l'état affiche la route en rouge.
 
 PLUGIN_HQPLAYER_NATIVE_ON
-	EN	Skip anything Lyrion would convert or relay
-	FR	Ignorer tout ce que Lyrion convertirait ou relaierait
+	EN	Skip anything Lyrion would convert
+	FR	Ignorer tout ce que Lyrion convertirait
 
 PLUGIN_HQPLAYER_NATIVE_OFF
 	EN	Play it anyway, and flag it
@@ -333,8 +337,8 @@ PLUGIN_HQPLAYER_BP_CHK_ROUTE_3
 	FR	Dernier morceau : transcodé en FLAC par Lyrion (un format qu'HQPlayer ne sait pas décoder, comme ALAC ou AAC)
 
 PLUGIN_HQPLAYER_BP_CHK_ROUTE_4
-	EN	Last track: relayed through Lyrion's own stream (Deezer, radio), and transcoded if Lyrion's File Types rules say so
-	FR	Dernier morceau : relayé par le flux de Lyrion (Deezer, radio), et transcodé si les règles Types de fichiers de Lyrion le demandent
+	EN	Last track: relayed through Lyrion's own stream AND converted by it (Lyrion's File Types rules, or a format HQPlayer cannot decode)
+	FR	Dernier morceau : relayé par le flux de Lyrion ET converti par lui (règles Types de fichiers de Lyrion, ou format qu'HQPlayer ne sait pas décoder)
 
 PLUGIN_HQPLAYER_BP_CHK_ROUTE_SKIPPED
 	EN	Last track: skipped by Native files only - nothing converted reached HQPlayer
@@ -347,3 +351,11 @@ PLUGIN_HQPLAYER_INBUF
 PLUGIN_HQPLAYER_OUTBUF
 	EN	Output buffer
 	FR	Tampon de sortie
+
+PLUGIN_HQPLAYER_BP_CHK_ROUTE_4N
+	EN	Last track: relayed through Lyrion's stream without any conversion - the service's own file, bit for bit
+	FR	Dernier morceau : relayé par le flux de Lyrion sans aucune conversion - le fichier du service, bit pour bit
+
+PLUGIN_HQPLAYER_BP_CHK_HTTPMODE
+	EN	Streaming mode for HTTP(S) is not "Normal streaming" (Settings - Advanced - Network): Qobuz and Tidal are relayed by Lyrion instead of fetched directly by HQPlayer. Still bit-perfect, but track joins are not pre-queued
+	FR	Le mode de streaming HTTP(S) n'est pas « Streaming normal » (Réglages - Avancé - Réseau) : Qobuz et Tidal sont relayés par Lyrion au lieu d'être récupérés directement par HQPlayer. Toujours bit-perfect, mais les enchaînements ne sont pas préchargés

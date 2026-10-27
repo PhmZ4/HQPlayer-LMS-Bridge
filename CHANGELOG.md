@@ -4,6 +4,23 @@ All notable changes to **HQPlayer Bridge** are recorded here. This file records
 what users receive: one entry per release published to `main`. Per-version
 development notes live in `CLAUDE.md`.
 
+## 1.3.0 — 2026-10-27
+
+### Improvements
+
+- **A Qobuz FLAC relayed by Lyrion without conversion now counts as native.**
+  When Lyrion does not let HQPlayer fetch a Qobuz or Tidal track directly -
+  most often because *Streaming mode for HTTP(S)* (Settings → Advanced →
+  Network) is set to *Persistent mode* or *Cache* - the track goes through
+  Lyrion's own stream. The bridge now asks Lyrion's own transcoding table what
+  it does with that track: if it is the passthrough rule, the bytes are the
+  service's original FLAC, so the track plays under *Native files only*, the
+  route reads "relayed without conversion" and the last-track check is a ✓.
+  A relay that Lyrion does transcode is still flagged and still skipped.
+- **The HQPlayer page says when the HTTP(S) streaming mode stops direct
+  streaming**, as an information line, so you know why Qobuz is relayed and
+  not pre-queued.
+
 ## 1.2.1 — 2026-10-26
 
 ### Changes

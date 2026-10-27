@@ -29,6 +29,14 @@ Three settled rules are AMENDED, deliberately, by the fork owner's request - do 
 - Native-only refusal goes through `_loadFailed` with token `PLUGIN_HQPLAYER_BP_REFUSED`, deferred and
   generation-stamped like a refused PlaylistAdd; `_handOver` holds a refused tier instead of appending it.
 
+**1.3.0 (PhmZ4 fork, 2026-10-27) - a passthrough relay is native.** `tierConverts( tier, relayNative )`:
+tier 4 is a conversion ONLY when `hqRelayNative` is false. `_relayIsPassthrough` asks
+`TranscodingHelper::getConvertCommand2` the same question Song::open asked (wantFormat, modes I+R or R+T on a
+transcoder seek) and requires `command eq '-'` and a format in `%HQP_PLAYS`; any failure is NO. `_handOver`
+restores `hqRelayNative` with `hqTier`. Most common cause of Qobuz on tier 4: server pref `useEnhancedHTTP`
+(Persistent/Cache) - `HTTP::canDirectStream` returns 0 through `canEnhanceHTTP`. Shown on the player page as an
+info line (ok => 2), never a warning.
+
 ### DECLINED / SETTLED INDEX — GREP THIS FIRST
 
 **One grep before reporting any finding.** Find the symbol or subject in this table, then grep
