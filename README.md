@@ -8,7 +8,7 @@ There is one **optional** helper, for a different job: restarting HQPlayer from 
 
 Tested on LMS 9.x against **HQPlayer Embedded 6** feeding an NAA endpoint.
 
-> **This is PhmZ4's fork** of [SimonArnold002/LMS-HQPlayer-Bridge](https://github.com/SimonArnold002/LMS-HQPlayer-Bridge), currently at version **1.3.0**, published as **HQPlayer-LMS-Bridge** to keep it apart from the original. It adds a [bit-perfect mode](#bit-perfect-mode), shows the **ReplayGain** setting on the player's Audio page, puts the [connection status](#connection-status) on the plugin's settings page, and shows HQPlayer's input and output buffers in the [live view](#seeing-what-its-doing). Everything else works as in the original. See [CHANGELOG.md](CHANGELOG.md).
+> **This is PhmZ4's fork** of [SimonArnold002/LMS-HQPlayer-Bridge](https://github.com/SimonArnold002/LMS-HQPlayer-Bridge), currently at version **1.3.1**, published as **HQPlayer-LMS-Bridge** to keep it apart from the original. It adds a [bit-perfect mode](#bit-perfect-mode), shows the **ReplayGain** setting on the player's Audio page, puts the [connection status](#connection-status) on the plugin's settings page, and shows HQPlayer's input and output buffers in the [live view](#seeing-what-its-doing). Everything else works as in the original. See [CHANGELOG.md](CHANGELOG.md).
 
 ### What's new in this fork (1.1.0 – 1.3.0)
 

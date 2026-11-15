@@ -229,6 +229,26 @@ sub initBitrateLimit {
     return 1;
 }
 
+# TRANSITION PREFS: an explicit "no fade" (1.3.1).
+#
+# This player never fades - LMS reads transitionType / transitionSmart only in
+# Squeezebox.pm (slimproto), and HQPlayer makes every join itself. But as a
+# Slim::Player::Player subclass it gets NO default for either, and Material's
+# player settings then misbehave: its "On track change" select starts at the
+# STRING '0', matches none of its numeric options and shows only its label,
+# and choosing "No fade" is never saved, because its save compares
+# '0' != 0 loosely and sends nothing. So the setting appears to revert.
+#
+# Only when unset - init() never overwrites a stored value, so a choice the
+# user made stands (the initBitrateLimit rule).
+sub initTransitionPrefs {
+    my $self = shift;
+
+    $serverPrefs->client($self)->init( { transitionType => 0, transitionSmart => 0 } );
+
+    return 1;
+}
+
 sub isPlayer          { 1 }
 # Volume is shared with HQPlayer rather than owned by either side - see the
 # volume() block below for the mapping and for both directions of the sync.

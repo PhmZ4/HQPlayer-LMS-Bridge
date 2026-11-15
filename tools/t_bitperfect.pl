@@ -414,5 +414,20 @@ print "-- HTTP(S) streaming mode (1.3.0) --\n";
     $sp->set( 'useEnhancedHTTP', 0 );
 }
 
+print "-- transition prefs: an explicit no fade (1.3.1) --\n";
+{
+    my $t = Plugins::HQPlayerBridge::Player->new('02:dd:00:00:00:01', 'paddr', 1.0, undef, 12, undef);
+    my $tp = $sp->client($t);
+    is( $tp->get('transitionType'), '(undef)', 'a new player starts with no transition value - what broke Material' );
+    $t->initTransitionPrefs;
+    is( $tp->get('transitionType') . $tp->get('transitionSmart'), '00', 'no fade and smart crossfade off are stored' );
+    $tp->set( 'transitionType', 1 ); $tp->set( 'transitionSmart', 1 );
+    $t->initTransitionPrefs;
+    is( $tp->get('transitionType') . $tp->get('transitionSmart'), '11', 'a value the user chose is never overwritten' );
+    open my $fh, '<', '../HQPlayerBridge/Plugin.pm' or die $!;
+    my $src = do { local $/; <$fh> };
+    ok( scalar( $src =~ /initBitrateLimit \};\s+.*?\n\s+eval \{ \$client->initTransitionPrefs \};/s ), 'run when a player is created, next to initBitrateLimit' );
+}
+
 printf "\n%d passed, %d failed\n",$pass,$fail;
 exit($fail?1:0);
