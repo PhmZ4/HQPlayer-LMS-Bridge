@@ -27,5 +27,15 @@ sub client {
 sub get { $_[0]->{store}{ $_[1] } }
 sub set { $_[0]->{store}{ $_[1] } = $_[2] }
 
-sub setPlayerDefault {} sub init {} sub setChange {}
+sub setPlayerDefault {} sub setChange {}
+
+# As LMS's own (Prefs::Base::init): only a key that is missing or undef is set.
+sub init {
+    my ( $self, $hash ) = @_;
+    return unless ref $hash eq 'HASH';
+    for my $k ( keys %$hash ) {
+        $self->{store}{$k} = $hash->{$k} unless defined $self->{store}{$k};
+    }
+    return;
+}
 1;

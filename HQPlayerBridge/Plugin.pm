@@ -1570,6 +1570,9 @@ sub _create {
     # before we can tell an unset bitrate cap from a chosen one.  Without this
     # LMS transcodes every streamed track to MP3 320 - see initBitrateLimit.
     eval { $client->initBitrateLimit };
+
+    # An explicit "no fade", so Material's Audio settings show and save it.
+    eval { $client->initTransitionPrefs };
     $log->warn("could not set the bitrate limit for $id: $@") if $@;
 
     my $ctl = Plugins::HQPlayerBridge::Control->new(

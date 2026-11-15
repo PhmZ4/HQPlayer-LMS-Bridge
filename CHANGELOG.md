@@ -4,6 +4,17 @@ All notable changes to **HQPlayer Bridge** are recorded here. This file records
 what users receive: one entry per release published to `main`. Per-version
 development notes live in `CLAUDE.md`.
 
+## 1.3.1 — 2026-11-15
+
+### Fixes
+
+- **"No fade" now sticks in Material's player settings.** An HQPlayer player
+  had no stored value for *On track change* or *Smart crossfade*, so Material
+  showed an empty menu and never saved *No fade*. The bridge now stores *No
+  fade* and *Smart crossfade* off for each HQPlayer player that has no value
+  yet; a value you chose is kept. These settings change nothing in playback -
+  HQPlayer makes every track join itself.
+
 ## 1.3.0 — 2026-10-27
 
 ### Improvements
