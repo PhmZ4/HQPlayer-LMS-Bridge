@@ -8,11 +8,11 @@ There is one **optional** helper, for a different job: restarting HQPlayer from 
 
 Tested on LMS 9.x against **HQPlayer Embedded 6** feeding an NAA endpoint.
 
-> **This is PhmZ4's fork** of [SimonArnold002/LMS-HQPlayer-Bridge](https://github.com/SimonArnold002/LMS-HQPlayer-Bridge), currently at version **1.3.1**, published as **HQPlayer-LMS-Bridge** to keep it apart from the original. It adds a [bit-perfect mode](#bit-perfect-mode), shows the **ReplayGain** setting on the player's Audio page, puts the [connection status](#connection-status) on the plugin's settings page, and shows HQPlayer's input and output buffers in the [live view](#seeing-what-its-doing). Everything else works as in the original. See [CHANGELOG.md](CHANGELOG.md).
+> **This is PhmZ4's fork** of [SimonArnold002/LMS-HQPlayer-Bridge](https://github.com/SimonArnold002/LMS-HQPlayer-Bridge), currently at version **1.3.2**, published as **HQPlayer-LMS-Bridge** to keep it apart from the original. It adds a [bit-perfect mode](#bit-perfect-mode), shows the **ReplayGain** setting on the player's Audio page, puts the [connection status](#connection-status) on the plugin's settings page, and shows HQPlayer's input and output buffers in the [live view](#seeing-what-its-doing). Everything else works as in the original. See [CHANGELOG.md](CHANGELOG.md).
 
 ### What's new in this fork (1.1.0 – 1.3.0)
 
-- **A bit-perfect mode**, in *Player settings → HQPlayer*. While it is on there is no ReplayGain, no bitrate limit and no MP3 conversion; Lyrion's volume is set to fixed and HQPlayer is set once to 0 dB, or to its own maximum volume if that is lower. An optional *Native files only* switch skips anything Lyrion would convert (ALAC/AAC/M4A, or a relayed stream it transcodes). Since 1.3.0, a Qobuz FLAC that Lyrion relays without conversion counts as native.
+- **A bit-perfect mode**, in *Player settings → HQPlayer*. While it is on there is no ReplayGain, no bitrate limit and no MP3 conversion; Lyrion's volume is set to fixed and HQPlayer is set to 0 dB, or to its own maximum volume if that is lower, again each time the bridge reconnects to it. An optional *Native files only* switch skips anything Lyrion would convert (ALAC/AAC/M4A, or a relayed stream it transcodes). Since 1.3.0, a Qobuz FLAC that Lyrion relays without conversion counts as native.
 - **A ✓/⚠ list** of every Lyrion setting that could alter the stream, and (1.1.1) whether Lyrion touched the last track played.
 - **The ReplayGain setting is visible** on the player's Audio page.
 - **The connection status** of each HQPlayer in *Settings → Plugins → HQPlayer Bridge*.
@@ -40,7 +40,7 @@ Every page of the plugin is also available in French.
 | **Pause from either end** | Pausing at HQPlayer or on the endpoint's remote pauses LMS too, within a second | Nothing |
 | **Skip back from HQPlayer** | Skipping back to an earlier track in HQPlayer's own playlist while it plays moves LMS to that track too | Nothing |
 | **Stable player identity** | Prefs and playlist survive HQPlayer changing IP address | Nothing |
-| **Bit-perfect mode** | One switch per player: no ReplayGain, no bitrate limit, Lyrion volume fixed, HQPlayer set once to 0 dB or its own maximum. See [Bit-perfect mode](#bit-perfect-mode) | Open **Player settings → HQPlayer**, set **Bit-perfect mode** to *On* and save. Optionally set **Native files only** too. Set HQPlayer's own volume and maximum the way you want them |
+| **Bit-perfect mode** | One switch per player: no ReplayGain, no bitrate limit, Lyrion volume fixed, HQPlayer set to 0 dB or its own maximum, again at every reconnection. See [Bit-perfect mode](#bit-perfect-mode) | Open **Player settings → HQPlayer**, set **Bit-perfect mode** to *On* and save. Optionally set **Native files only** too. Set HQPlayer's own volume and maximum the way you want them |
 | **What Lyrion could change** | A ✓/⚠ list of ReplayGain, bitrate limit, volume control and the route of the last track. See [What Lyrion could change](#what-lyrion-could-change) | Open **Player settings → HQPlayer**. Reload the page to refresh it |
 | **Connection status** | Each HQPlayer's link, output mode, filter, shaper, transport and route, with what the bridge is still waiting for | Open **Settings → Plugins → HQPlayer Bridge**. It is a snapshot: reload to refresh, or follow its link to the live view |
 | **Live view** | What's playing, transport, volume, the signal path and HQPlayer's **input and output buffers**, updating every second in your Material theme | Open **Apps → HQPlayer Bridge → HQPlayer Live View**, the link on either settings page, or `http://<your-LMS>:9000/hqplive` |
@@ -221,10 +221,12 @@ unaltered:
 - **No bitrate limit.** Lyrion's limit is held at none, so nothing is ever
   turned into MP3 on the way.
 - **Lyrion's volume is fixed.** The slider no longer moves HQPlayer. Switching
-  the mode on sets HQPlayer's volume to 0 dB once - or to HQPlayer's own
+  the mode on sets HQPlayer's volume to 0 dB - or to HQPlayer's own
   **maximum volume** if that is lower, so a -3 dB ceiling kept as headroom
-  against inter-sample clipping is respected. HQPlayer's own volume, and the
-  endpoint's knob, stay yours to change afterwards. Switching the mode off
+  against inter-sample clipping is respected. The same level is sent again each
+  time the bridge reconnects to HQPlayer (after an HQPlayer restart, for
+  instance), since HQPlayer then starts at its own startup volume. In between,
+  HQPlayer's own volume and the endpoint's knob stay yours to change. Switching the mode off
   puts Lyrion's volume control back as it was.
 
 **Native files only** (a second switch, used only with bit-perfect on) skips

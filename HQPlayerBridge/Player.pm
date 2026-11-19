@@ -2088,9 +2088,11 @@ sub _tripStop {
 #     makes LMS transcode tier 4 to MP3 - see initBitrateLimit.
 #   * LMS's volume control - set to FIXED, so the slider stops driving
 #     HQPlayer. The value it had is kept and put back when the mode goes off.
-#   * HQPlayer's volume - sent to unity (0 dB, or its ceiling if lower) ONCE,
-#     when the mode is switched on. Not re-asserted: HQPlayer's own volume and
-#     the endpoint's knob stay the user's to move afterwards.
+#   * HQPlayer's volume - sent to unity (0 dB, or its ceiling if lower) when
+#     the mode is switched on, and again on every new control connection
+#     (refreshVolumeRange, 1.3.2) - an HQPlayer restart starts at its own
+#     startup level. Not re-asserted within a connection: HQPlayer's own
+#     volume and the endpoint's knob stay the user's to move.
 #
 # THE LEDGER RULE "THE PLUGIN NEVER WRITES digitalVolumeControl" STILL HOLDS
 # for everything automatic: that rule killed detectors that INFERRED a fixed
@@ -3020,6 +3022,15 @@ sub refreshVolumeRange {
         return if $max - $min <= 0;
 
         $self->_setRange( $min, $max );
+
+        # BIT-PERFECT: UNITY AGAIN ON EVERY CONNECTION (1.3.2). Switching the
+        # mode on sends it once, but HQPlayer starts at its OWN startup level
+        # after a restart, and with LMS's volume fixed nothing would ever bring
+        # it back - so the music played quieter until the user noticed. Here,
+        # once per control connection and only once the range is known (so the
+        # clamp to HQPlayer's maximum is right). Within a connection HQPlayer's
+        # volume stays the user's to move.
+        $self->_sendUnity if $self->bitPerfect;
 
         return;
     } );

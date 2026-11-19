@@ -4,6 +4,17 @@ All notable changes to **HQPlayer Bridge** are recorded here. This file records
 what users receive: one entry per release published to `main`. Per-version
 development notes live in `CLAUDE.md`.
 
+## 1.3.2 — 2026-11-19
+
+### Fixes
+
+- **Bit-perfect mode puts HQPlayer back at unity after a restart.** The mode
+  set HQPlayer's volume to 0 dB (or its maximum, if lower) only at the moment
+  it was switched on. After an HQPlayer restart, HQPlayer starts at its own
+  startup volume, and with Lyrion's volume fixed nothing brought it back, so
+  music played quieter. The bridge now sends the same level again each time it
+  connects to HQPlayer. Within a connection, HQPlayer's volume is still yours.
+
 ## 1.3.1 — 2026-11-15
 
 ### Fixes

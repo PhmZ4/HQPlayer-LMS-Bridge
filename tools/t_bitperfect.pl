@@ -429,5 +429,33 @@ print "-- transition prefs: an explicit no fade (1.3.1) --\n";
     ok( scalar( $src =~ /initBitrateLimit \};\s+.*?\n\s+eval \{ \$client->initTransitionPrefs \};/s ), 'run when a player is created, next to initBitrateLimit' );
 }
 
+print "-- unity again on every connection (1.3.2) --\n";
+{
+    my $u = Plugins::HQPlayerBridge::Player->new('02:ee:00:00:00:01', 'paddr', 1.0, undef, 12, undef);
+    $u->hqControl( bless {}, 'FakeCtl' );
+    my @out;
+    no warnings 'redefine';
+    local *Plugins::HQPlayerBridge::Player::_send = sub {
+        my ( $self, $xml, $cb ) = @_;
+        push @out, $xml;
+        $cb->( { min => -60, max => -3 } ) if $cb && $xml eq '<VolumeRange/>';
+        return;
+    };
+    local *Plugins::HQPlayerBridge::Player::execute = sub {};
+
+    $pp->client($u)->set( 'bitperfect', 0 );
+    $u->refreshVolumeRange;
+    is( join( ',', @out ), '<VolumeRange/>', 'mode off: connecting only reads the range' );
+
+    @out = ();
+    $u->hqVolMin(undef); $u->hqVolMax(undef);
+    $pp->client($u)->set( 'bitperfect', 1 );
+    $u->refreshVolumeRange;
+    is( join( ',', @out ), '<VolumeRange/>,<Volume value="-3"/>',
+        'mode on: unity is sent on connect, clamped to HQPlayer\'s -3 dB maximum' );
+    is( $u->hqVolDb, '-3', 'and recorded as where HQPlayer now is' );
+    $pp->client($u)->set( 'bitperfect', 0 );
+}
+
 printf "\n%d passed, %d failed\n",$pass,$fail;
 exit($fail?1:0);
