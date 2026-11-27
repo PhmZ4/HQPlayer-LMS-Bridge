@@ -35,6 +35,7 @@ use Slim::Utils::PluginManager;
 use Slim::Utils::Prefs;
 use Slim::Utils::Timers;
 use Time::HiRes ();
+use List::Util ();
 use Slim::Control::Request;
 use Slim::Networking::SimpleAsyncHTTP;
 use Slim::Player::Source;
@@ -661,58 +662,77 @@ sub _now { return time() }
 # periodic re-read would only cost traffic.
 use constant OFFLOAD_PORT  => 8088;
 use constant OFFLOAD_DELAY => 3;      # let the engine finish writing its start block
-use constant OFFLOAD_TAIL  => 4_000_000;   # bytes of the log worth looking at
+# Bytes kept either side of the newest engine start. The log is NOT cut to a
+# tail: with no NAA found HQPlayer logs a discovery line every 2s (~2.4 MB a
+# day), so after LMS restarts under an HQPlayer running for days the start can
+# sit far back. rindex finds it anywhere; only this window is then parsed.
+use constant OFFLOAD_BEFORE => 20_000;
+use constant OFFLOAD_AFTER  => 60_000;
+
+# Three small steps, so each can be read on its own: the text out of the page,
+# the newest engine-start block, and what that block says.
+sub _logText {
+    my $text = shift;
+
+    my $at = rindex( $text, 'HQPlayer Engine version' );
+    return [] if $at < 0;
+    my $from = $at > OFFLOAD_BEFORE ? $at - OFFLOAD_BEFORE : 0;
+    $text = substr( $text, $from, $at - $from + OFFLOAD_AFTER );
+
+    # The web page may wrap the log in HTML; the facts are in the text.
+    $text =~ s/<br\s*\/?>/\n/gi;
+    $text =~ s/<[^>]*>//g;
+    my %ent = ( lt => '<', gt => '>', quot => '"', '#39' => "'", amp => '&' );
+    $text =~ s/&(lt|gt|quot|#39|amp);/$ent{$1}/g;    # one pass: &amp;lt; stays &lt;
+
+    return [ split /\r?\n/, $text ];
+}
+
+# ( first, last ) line of the newest engine start, or () when there is none.
+sub _engineBlock {
+    my $lines = shift;
+
+    my $eng = List::Util::first { $lines->[$_] =~ /HQPlayer Engine version/ } reverse 0 .. $#$lines;
+    return () unless defined $eng;
+
+    # The block opens at the audio library line written just before the
+    # engine starts, or a short way back if this build writes none.
+    my $floor = $eng > 60 ? $eng - 60 : 0;
+    my $start = List::Util::first { $lines->[$_] =~ /asoundlib version|Server starting|configuration reloaded/ }
+        reverse $floor .. $eng - 1;
+
+    my $end = $eng + 120 > $#$lines ? $#$lines : $eng + 120;
+
+    return ( $start // $floor, $end );
+}
+
+my $GPU_API = qr/CUDA|ROCm\/HIP|ROCm|HIP|Metal/i;
 
 sub _parseOffload {
     my $text = shift;
     return undef unless defined $text && length $text;
 
-    $text = substr( $text, -OFFLOAD_TAIL ) if length $text > OFFLOAD_TAIL;
-
-    # The web page may wrap the log in HTML; the facts are in the text.
-    $text =~ s/<br\s*\/?>/\n/gi;
-    $text =~ s/<[^>]*>//g;
-    $text =~ s/&lt;/</g; $text =~ s/&gt;/>/g; $text =~ s/&quot;/"/g;
-    $text =~ s/&#39;/'/g; $text =~ s/&amp;/&/g;
-
-    my @lines = split /\r?\n/, $text;
-
-    my $eng;
-    for my $i ( reverse 0 .. $#lines ) {
-        if ( $lines[$i] =~ /HQPlayer Engine version/ ) { $eng = $i; last }
-    }
-    return undef unless defined $eng;
-
-    # The block opens at the audio library line written just before the
-    # engine starts, or a short way back if this build writes none.
-    my $start = $eng > 60 ? $eng - 60 : 0;
-    for my $i ( reverse $start .. $eng ) {
-        if ( $lines[$i] =~ /asoundlib version|Server starting|configuration reloaded/ && $i < $eng ) {
-            $start = $i; last;
-        }
-    }
-    my $end = $eng + 120 > $#lines ? $#lines : $eng + 120;
+    my $lines = _logText($text);
+    my ( $start, $end ) = _engineBlock($lines) or return undef;
 
     my ( $requested, $api, $mode, @dev );
     for my $i ( $start .. $end ) {
-        my $l = $lines[$i];
-        $requested = 1 if $l =~ /\b(?:CUDA|ROCm|HIP|Metal)\S*\s+offload requested/i;
-        if ( $l =~ /\b(CUDA|ROCm\/HIP|ROCm|HIP|Metal)\s+offload:\s*(\S+)/i ) {
-            ( $api, $mode ) = ( $1, $2 );
-        }
-        if ( $l =~ /\b(?:CUDA|ROCm\/HIP|ROCm|HIP|Metal)\s+devices:/i ) {
-            for my $j ( $i + 1 .. $end ) {
-                last unless $lines[$j] =~ /\d\d:\d\d:\d\d\s+(\d+):\s*(\S.*?)\s*$/;
-                push @dev, $2;
-            }
+        my $l = $lines->[$i];
+        $requested = 1 if $l =~ /\b(?:$GPU_API)\S*\s+offload requested/;
+        ( $api, $mode ) = ( $1, $2 ) if $l =~ /\b($GPU_API)\s+offload:\s*(\S+)/;
+        next unless $l =~ /\b(?:$GPU_API)\s+devices:/;
+        for my $j ( $i + 1 .. $end ) {
+            last unless $lines->[$j] =~ /\d\d:\d\d:\d\d\s+\d+:\s*(\S.*?)\s*$/;
+            push @dev, $1;
         }
     }
 
-    return { state => 'ok', api => $api, mode => $mode, devices => \@dev }
+    my %r = ( api => $api, mode => $mode, devices => \@dev );
+
+    return { %r, state => 'ok' }
         if $mode && $mode !~ /^(?:none|off|disabled|0)$/i && @dev;
 
-    return { state => 'fail', api => $api, mode => $mode, devices => \@dev }
-        if $requested || $mode;
+    return { %r, state => 'fail' } if $requested || $mode;
 
     return { state => 'off' };
 }
@@ -732,6 +752,7 @@ sub _readOffload {
         my $res = shift;
         my $now = $bridges{$id} or return;
         return unless ( $now->{control} || 0 ) == ( $ctl || 0 );   # a newer bridge owns the id
+        return unless _linkUp($now);    # dropped meanwhile
         $now->{gpu}   = $res || { state => 'unknown' };
         $now->{gpuAt} = _now();
         main::INFOLOG && $log->is_info
@@ -1768,6 +1789,11 @@ sub _onLinkState {
     }
     else {
         $client->_stopPolling;
+
+        # The offload state belongs to the engine that just went away; the
+        # next proven link reads the new one.
+        Slim::Utils::Timers::killTimers( $id, \&_offloadTimer );
+        delete $b->{gpu};
 
         # Only a link LMS was told about: an accept-then-drop never was, and
         # must announce nothing - and was never made active, so it has no

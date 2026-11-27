@@ -1,5 +1,6 @@
 PLUGIN_HQPLAYER_BRIDGE
 	EN	HQPlayer Bridge
+	FR	HQPlayer Bridge
 
 PLUGIN_HQPLAYER_BRIDGE_DESC
 	EN	Presents each HQPlayer instance on your network as an ordinary Lyrion player, driven directly over HQPlayer's own control API. No UPnP bridge and no helper in the playback path: HQPlayer fetches the stream straight from Lyrion, so the plugin adds no audio stage of its own. Most of your library is handed over untouched, but Lyrion does still convert formats HQPlayer cannot decode, such as ALAC and AAC. A bit-perfect mode on each player's HQPlayer page removes everything on Lyrion's side that could alter the stream. Instances are discovered automatically - or, with discovery switched off in the settings, taken from IP addresses you enter.
@@ -35,6 +36,7 @@ PLUGIN_HQPLAYER_OUTFORMAT
 
 PLUGIN_HQPLAYER_PROCESSING
 	EN	Processing speed
+	FR	Vitesse de traitement
 
 PLUGIN_HQPLAYER_MODE
 	EN	Output mode
@@ -50,6 +52,7 @@ PLUGIN_HQPLAYER_SHAPER
 
 PLUGIN_HQPLAYER_SPEED
 	EN	x realtime
+	FR	x temps réel
 
 PLUGIN_HQPLAYER_TIER1
 	EN	Playing the original file straight from Lyrion, untranscoded - tags and cover art come from the file itself.
@@ -74,21 +77,27 @@ PLUGIN_HQPLAYER_TIER5
 
 PLUGIN_HQPLAYER_NONE_DESC
 	EN	Nothing answered the discovery probe on 239.192.0.199:4321. Check that HQPlayer is running and that its control API is enabled. An HQPlayer on another network segment, or on a network that blocks multicast, can be used by switching automatic discovery off in this plugin's settings and entering its IP address.
+	FR	Rien n'a répondu à la recherche sur 239.192.0.199:4321. Vérifiez qu'HQPlayer fonctionne et que son API de contrôle est activée. Un HQPlayer situé sur un autre segment réseau, ou sur un réseau qui bloque le multicast, peut être utilisé en désactivant la découverte automatique dans les réglages du plugin et en saisissant son adresse IP.
 
 PLUGIN_HQPLAYER_WAIT_AUTO
 	EN	Looking for HQPlayer on this network - it appears here as soon as it answers.
+	FR	Recherche d'HQPlayer sur ce réseau - il apparaît ici dès qu'il répond.
 
 PLUGIN_HQPLAYER_WAIT_ADDR
 	EN	Waiting for HQPlayer at %s - it appears here as soon as it connects.
+	FR	En attente d'HQPlayer à %s - il apparaît ici dès qu'il se connecte.
 
 PLUGIN_HQPLAYER_NONE_DESC_EMPTY
 	EN	Automatic discovery is switched off and no HQPlayer address has been entered, so there are no players. Open Settings and enter the IP address of each HQPlayer, or switch automatic discovery back on.
+	FR	La découverte automatique est désactivée et aucune adresse HQPlayer n'a été saisie, il n'y a donc aucun lecteur. Ouvrez les Réglages et saisissez l'adresse IP de chaque HQPlayer, ou réactivez la découverte automatique.
 
 PLUGIN_HQPLAYER_NONE_DESC_OFF
 	EN	Automatic discovery is switched off, and no HQPlayer at the addresses in this plugin's settings has answered yet. Check that HQPlayer is running at those addresses and that its control API is enabled, or switch automatic discovery back on in the settings.
+	FR	La découverte automatique est désactivée, et aucun HQPlayer n'a encore répondu aux adresses saisies dans les réglages du plugin. Vérifiez qu'HQPlayer fonctionne à ces adresses et que son API de contrôle est activée, ou réactivez la découverte automatique dans les réglages.
 
 PLUGIN_HQPLAYER_TRANSPORT_ID
 	EN	id
+	FR	id
 
 
 
@@ -100,109 +109,144 @@ PLUGIN_HQPLAYER_LIVE_TITLE
 
 PLUGIN_HQPLAYER_LIVE_BACK
 	EN	Back to Material
+	FR	Retour à Material
 
 PLUGIN_HQPLAYER_CTL_PREV
 	EN	Previous track
+	FR	Morceau précédent
 
 PLUGIN_HQPLAYER_CTL_NEXT
 	EN	Next track
+	FR	Morceau suivant
 
 PLUGIN_HQPLAYER_CTL_PLAY
 	EN	Play
+	FR	Lecture
 
 PLUGIN_HQPLAYER_CTL_PAUSE
 	EN	Pause
+	FR	Pause
 
 PLUGIN_HQPLAYER_CTL_MUTE
 	EN	Mute
+	FR	Couper le son
 
 PLUGIN_HQPLAYER_CTL_UNMUTE
 	EN	Unmute
+	FR	Rétablir le son
 
 PLUGIN_HQPLAYER_CTL_VOLUME
 	EN	Volume
+	FR	Volume
 
 PLUGIN_HQPLAYER_CTL_VOLDN
 	EN	Decrease volume
+	FR	Baisser le volume
 
 PLUGIN_HQPLAYER_CTL_VOLUP
 	EN	Increase volume
+	FR	Augmenter le volume
 
 PLUGIN_HQPLAYER_LIVE_AUTO
 	EN	Auto
+	FR	Auto
 
 PLUGIN_HQPLAYER_LIVE_CONTROLS
 	EN	Controls
+	FR	Commandes
 
 PLUGIN_HQPLAYER_LIVE_WAITING
 	EN	Waiting for the player to connect
+	FR	En attente de la connexion du lecteur
 
 PLUGIN_HQPLAYER_RESTART
 	EN	Restart %s
+	FR	Redémarrer %s
 
 PLUGIN_HQPLAYER_RESTART_NOW
 	EN	Restart %s now
+	FR	Redémarrer %s maintenant
 
 PLUGIN_HQPLAYER_RESTART_DESC
 	EN	Playback stops. HQPlayer restarts with its saved settings, which also makes it find a network audio adapter that was switched off and on again.
+	FR	La lecture s'arrête. HQPlayer redémarre avec ses réglages enregistrés, ce qui lui fait aussi retrouver un adaptateur audio réseau éteint puis rallumé.
 
 PLUGIN_HQPLAYER_RESTART_OK
 	EN	HQPlayer restarted (%s s)
+	FR	HQPlayer redémarré (%s s)
 
 PLUGIN_HQPLAYER_RESTART_FAIL
 	EN	Restart failed: %s
+	FR	Échec du redémarrage : %s
 
 PLUGIN_HQPLAYER_RESTART_GONE
 	EN	This HQPlayer is no longer connected
+	FR	Ce HQPlayer n'est plus connecté
 
 PLUGIN_HQPLAYER_SETTINGS
 	EN	Settings
+	FR	Réglages
 
 
 PLUGIN_HQPLAYER_ADDR_TITLE
 	EN	HQPlayer addresses
+	FR	Adresses d'HQPlayer
 
 PLUGIN_HQPLAYER_ADDR_DESC
 	EN	The IP address of each HQPlayer to use, separated by commas, spaces or new lines. IP addresses only, not host names. HQPlayer must be running at a new address when you save - the Bridge connects to it and will not save an address nothing answers at. A player is identified by the name set in HQPlayer, not by its address: delete an address and save to remove its player, and add it back - or replace it with HQPlayer's new address - to get the same player back with its settings and playlist.
+	FR	L'adresse IP de chaque HQPlayer à utiliser, séparées par des virgules, des espaces ou des retours à la ligne. Adresses IP uniquement, pas de noms d'hôte. HQPlayer doit fonctionner à une nouvelle adresse au moment de l'enregistrement : le Bridge s'y connecte et n'enregistre pas une adresse où rien ne répond. Un lecteur est identifié par le nom défini dans HQPlayer, pas par son adresse : supprimez une adresse et enregistrez pour retirer son lecteur, et ajoutez-la de nouveau - ou remplacez-la par la nouvelle adresse d'HQPlayer - pour retrouver le même lecteur avec ses réglages et sa liste de lecture.
 
 PLUGIN_HQPLAYER_AUTO_TITLE
 	EN	Automatically
+	FR	Automatiquement
 
 PLUGIN_HQPLAYER_AUTO_DESC
 	EN	Automatically: the Bridge looks for HQPlayer on this network and follows an HQPlayer whose address changes. Only the addresses below: for an HQPlayer on another subnet, or on a network that blocks multicast - the Bridge then sends no discovery traffic at all, so HQPlayer's log gets no discovery lines, and any player not in the list is removed when you save. The two never run together: going back to automatic clears the list and removes those players, and discovery finds again whichever it can reach, with their settings. With only the addresses, an HQPlayer whose address changes is not followed: update the address, or give that machine a fixed address.
+	FR	Automatiquement : le Bridge cherche HQPlayer sur ce réseau et suit un HQPlayer dont l'adresse change. Uniquement aux adresses ci-dessous : pour un HQPlayer sur un autre sous-réseau, ou sur un réseau qui bloque le multicast - le Bridge n'envoie alors aucun trafic de découverte, le journal d'HQPlayer n'en reçoit donc aucune ligne, et tout lecteur absent de la liste est retiré à l'enregistrement. Les deux ne fonctionnent jamais ensemble : revenir au mode automatique vide la liste et retire ces lecteurs, et la découverte retrouve ceux qu'elle peut atteindre, avec leurs réglages. Avec les adresses seules, un HQPlayer dont l'adresse change n'est pas suivi : mettez à jour l'adresse, ou donnez une adresse fixe à cette machine.
 
 PLUGIN_HQPLAYER_ADDR_BAD
 	EN	Not saved: %s is not an IP address (host names cannot be used). Nothing was changed.
+	FR	Non enregistré : %s n'est pas une adresse IP (les noms d'hôte ne sont pas acceptés). Rien n'a été modifié.
 
 PLUGIN_HQPLAYER_MODE_TITLE
 	EN	Find HQPlayer
+	FR	Trouver HQPlayer
 
 PLUGIN_HQPLAYER_MANUAL_TITLE
 	EN	Only at the addresses below
+	FR	Uniquement aux adresses ci-dessous
 
 PLUGIN_HQPLAYER_ADDR_DEAD
 	EN	Not saved: nothing answered at %s. HQPlayer must be running at this address. Nothing was changed.
+	FR	Non enregistré : rien n'a répondu à %s. HQPlayer doit fonctionner à cette adresse. Rien n'a été modifié.
 
 PLUGIN_HQPLAYER_ADDR_CHECKING
 	EN	Checking that HQPlayer answers at %s - this can take a few seconds.
+	FR	Vérification qu'HQPlayer répond à %s - cela peut prendre quelques secondes.
 
 PLUGIN_HQPLAYER_SAVED
 	EN	Saved.
+	FR	Enregistré.
 
 PLUGIN_HQPLAYER_SAVED_AUTO
 	EN	Saved: HQPlayer is now found automatically.
+	FR	Enregistré : HQPlayer est désormais trouvé automatiquement.
 
 PLUGIN_HQPLAYER_SAVED_CLEARED
 	EN	The addresses were cleared and their players removed.
+	FR	Les adresses ont été effacées et leurs lecteurs retirés.
 
 PLUGIN_HQPLAYER_ADDR_REMOVED
 	EN	Saved: removed %s.
+	FR	Enregistré : %s retiré.
 
 PLUGIN_HQPLAYER_ADDR_EMPTY
 	EN	Saved: no HQPlayer address entered, so there are no players until you add one.
+	FR	Enregistré : aucune adresse HQPlayer saisie, il n'y a donc aucun lecteur tant que vous n'en ajoutez pas.
 
 PLUGIN_HQPLAYER_ADDR_FOUND
 	EN	Saved: HQPlayer '%s' answered at %s.
+	FR	Enregistré : HQPlayer '%s' a répondu à %s.
 
 PLUGIN_HQPLAYER_PLAYER_SETTINGS
 	EN	HQPlayer

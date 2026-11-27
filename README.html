@@ -116,7 +116,7 @@
   <h1>HQPlayer Bridge — LMS Plugin</h1>
   <p class="tagline">A plugin for <strong>Lyrion Music Server</strong> that presents each <strong>HQPlayer</strong> instance on your network as a native LMS player. Play to it, pause, seek, set its volume and see its artwork from Material or any control point, while HQPlayer does the upsampling, filtering and modulation exactly as it always has.</p>
   <div class="badges">
-    <span class="badge accent">v1.4.0</span>
+    <span class="badge accent">v1.4.1</span>
     <span class="badge">LMS 8.0.0+</span>
     <span class="badge">HQPlayer Embedded 6</span>
     <span class="badge">No extra audio hop</span>
@@ -343,7 +343,7 @@ Input buffer       [█████████░░░]  81 %
 Output buffer      [███████████░]  94 %
 GPU offload        ● CUDA all - NVIDIA GeForce RTX 4070</code></pre>
 <p><strong>Input buffer</strong> is how much HQPlayer has read ahead of its decoder, <strong>Output buffer</strong> how much is queued for the endpoint. A bar turns red below 15% while playing: a low input buffer points at the network or the source (Lyrion, the streaming service), a low output buffer at HQPlayer's processing or the link to the NAA. Stopped or paused, an empty buffer is normal.</p>
-<p><strong>GPU offload</strong> shows whether HQPlayer runs part of its processing on a graphics card (CUDA on NVIDIA, ROCm/HIP on AMD). HQPlayer's control API does not report this, so the bridge reads HQPlayer's own log from its web interface (<code>http://&lt;HQPlayer&gt;:8088/log</code>, no login needed), once each time the bridge connects to HQPlayer: offload can only change when HQPlayer's engine starts, and every start (a restart, a settings change) reconnects the bridge. It reads only the most recent engine start.</p>
+<p><strong>GPU offload</strong> shows whether HQPlayer runs part of its processing on a graphics card (CUDA on NVIDIA, ROCm/HIP on AMD). HQPlayer's control API does not report this, so the bridge reads HQPlayer's own log from its web interface (<code>http://&lt;HQPlayer&gt;:8088/log</code>, no login needed), once each time the bridge connects to HQPlayer, wherever the latest engine start sits in the log: offload can only change when HQPlayer's engine starts, and every start (a restart, a settings change) reconnects the bridge. It reads only the most recent engine start.</p>
 <table>
 <thead><tr>
 <th>Light</th>
@@ -352,7 +352,7 @@ GPU offload        ● CUDA all - NVIDIA GeForce RTX 4070</code></pre>
 <tbody>
 <tr><td>🟢 green</td><td>HQPlayer is using a GPU. The line names the API, the mode and the card</td></tr>
 <tr><td>🔴 red</td><td><em>Not enabled</em>: no offload is set in HQPlayer. <em>Requested, but no GPU in use</em>: offload is set (<code>cuda="1"</code> in <code>hqplayerd.xml</code>) but HQPlayer found no usable card: check the driver</td></tr>
-<tr><td>⚪ grey</td><td>The log cannot be read. HQPlayer Desktop has no web interface on port 8088, so the light stays grey there</td></tr>
+<tr><td>⚪ grey</td><td>The log cannot be read, or the connection to HQPlayer just dropped (it is read again when it comes back). HQPlayer Desktop has no web interface on port 8088, so the light stays grey there</td></tr>
 </tbody></table>
 <p>To turn offload on in HQPlayer Embedded, set <code>cuda="1"</code> on the <code>engine</code> element of <code>/etc/hqplayer/hqplayerd.xml</code> and restart HQPlayer.</p>
 <p><strong>With more than one HQPlayer,</strong> a row of names appears above the panel and you tap the one you want to see and control. <strong>Auto</strong>, the default, follows whichever instance is playing. Your choice is remembered in that browser, and a dot marks any instance that is playing but not currently shown. Every instance's signal path is listed below either way.</p>

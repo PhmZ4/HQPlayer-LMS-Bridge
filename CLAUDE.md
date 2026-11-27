@@ -46,6 +46,10 @@ nothing = off (red); unreadable / no :8088 (Desktop) = unknown (grey). Format ME
 the Apps feed or `signalPathFor` (Philippe's call: offload changes only at an engine start, every start drops
 the link, and the log can pass 10 MB). This is NOT the 0.2.49 log reader coming back: that one fed the ReplayGain calculation,
 which stays verbatim; this one only feeds a display. Pinned in `t_offload.pl`.
+**1.4.1:** the newest start is found with `rindex` over the WHOLE log and only a window around it is parsed
+(`OFFLOAD_BEFORE`/`OFFLOAD_AFTER`) - the 1.4.0 4 MB tail lost it after ~1.5 days of NAA-discovery lines with
+LMS restarted under a running HQPlayer. A proven link drop clears `{gpu}` and kills the timer; an answer
+landing after the drop is ignored (`_linkUp`, so `t_plugin.pl`'s `_linkUp(` count is 4). All strings have FR.
 
 ### DECLINED / SETTLED INDEX — GREP THIS FIRST
 

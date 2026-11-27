@@ -92,7 +92,6 @@ sub beforeRender {
 
     my $cp = $prefs->client($client);
     my $sp = $serverPrefs->client($client);
-    my $s  = sub { Slim::Utils::Strings::string(@_) };
 
     $params->{hqp_bp}     = $cp->get('bitperfect') ? 1 : 0;
     $params->{hqp_native} = $cp->get('nativeonly') ? 1 : 0;
@@ -100,14 +99,37 @@ sub beforeRender {
     # THE CHECKS - each LMS-side thing that could alter the stream, read from
     # where LMS itself reads it, with whether it is clean. Formatted HERE; the
     # template only prints finished strings (the Settings.pm rule).
+
+    # THIS player's row from the shared status source - the same strings the
+    # Apps feed and the live view show.
+    $params->{hqp_checks} = _checks( $client, $sp, $params->{hqp_bp} );
+
+    my $rows = $statusSource ? eval { $statusSource->($client) } : undef;
+    my ($mine) = grep { ( $_->{playerid} // '' ) eq $client->id } @{ ( $rows || {} )->{rows} || [] };
+
+    $params->{hqp_status} = $mine ? Plugins::HQPlayerBridge::Settings::statusLines( $mine->{path} ) : [];
+
+    return;
+}
+
+# The ✓/⚠ list, one entry per Lyrion setting that could alter the stream.
+# ok: 1 = fine, 0 = a warning, 2 = neutral information.
+sub _check { return { ok => $_[0] ? 1 : 0, text => $_[1] } }
+
+sub _str { return Slim::Utils::Strings::string(@_) }
+
+sub _checks {
+    my ( $client, $sp, $bp ) = @_;
+    my $s = \&_str;
+
     my @checks;
-    my $add = sub { push @checks, { ok => $_[0] ? 1 : 0, text => $_[1] } };
+    my $add = sub { push @checks, _check(@_) };
 
     my $rg = $sp->get('replayGainMode') || 0;
-    $add->( $params->{hqp_bp} || !$rg,
-          $params->{hqp_bp} ? $s->('PLUGIN_HQPLAYER_BP_CHK_RG_UNITY')
-        : $rg               ? $s->('PLUGIN_HQPLAYER_BP_CHK_RG_ON')
-        :                     $s->('PLUGIN_HQPLAYER_BP_CHK_RG_OFF') );
+    $add->( $bp || !$rg,
+          $bp ? $s->('PLUGIN_HQPLAYER_BP_CHK_RG_UNITY')
+        : $rg ? $s->('PLUGIN_HQPLAYER_BP_CHK_RG_ON')
+        :       $s->('PLUGIN_HQPLAYER_BP_CHK_RG_OFF') );
 
     my $max = $sp->get('maxBitrate');
     $add->( defined $max && $max eq '0',
@@ -123,17 +145,31 @@ sub beforeRender {
     # three above exist to protect: did Lyrion itself touch the bytes of the
     # track HQPlayer is playing, or last played? hqTier is set at every load
     # and kept after a stop. ok => 2 is NEUTRAL (nothing to judge yet).
+    push @checks, _routeCheck($client);
+
+    if ( preferences('server')->get('useEnhancedHTTP') ) {
+        push @checks, { ok => 2, text => $s->('PLUGIN_HQPLAYER_BP_CHK_HTTPMODE') };
+    }
+
+    return \@checks;
+}
+
+# What happened to the last track: skipped, nothing yet, or its route.
+sub _routeCheck {
+    my $client = shift;
+    my $s = \&_str;
+
     my $tier = $client->can('hqTier') ? ( $client->hqTier || 0 ) : 0;
 
     if ( $client->can('hqRefusedTier') && defined $client->hqRefusedTier ) {
-        $add->( 1, $s->('PLUGIN_HQPLAYER_BP_CHK_ROUTE_SKIPPED') );
+        return _check( 1, $s->('PLUGIN_HQPLAYER_BP_CHK_ROUTE_SKIPPED') );
     }
     elsif ( !$tier ) {
-        push @checks, { ok => 2, text => $s->('PLUGIN_HQPLAYER_BP_CHK_ROUTE_NONE') };
+        return { ok => 2, text => $s->('PLUGIN_HQPLAYER_BP_CHK_ROUTE_NONE') };
     }
     else {
         my $native = $client->can('hqRelayNative') ? $client->hqRelayNative : 0;
-        $add->( !Plugins::HQPlayerBridge::Player::tierConverts( $tier, $native ),
+        return _check( !Plugins::HQPlayerBridge::Player::tierConverts( $tier, $native ),
             $s->( 'PLUGIN_HQPLAYER_BP_CHK_ROUTE_' . $tier . ( $tier == 4 && $native ? 'N' : '' ) ) );
     }
 
@@ -143,20 +179,6 @@ sub beforeRender {
     # canEnhanceHTTP), so Qobuz and Tidal are relayed through Lyrion instead
     # of fetched by HQPlayer itself - still bit-perfect when passed through,
     # but without the pre-queued gapless join. Shown only when it is set.
-    if ( preferences('server')->get('useEnhancedHTTP') ) {
-        push @checks, { ok => 2, text => $s->('PLUGIN_HQPLAYER_BP_CHK_HTTPMODE') };
-    }
-
-    $params->{hqp_checks} = \@checks;
-
-    # THIS player's row from the shared status source - the same strings the
-    # Apps feed and the live view show.
-    my $rows = $statusSource ? eval { $statusSource->($client) } : undef;
-    my ($mine) = grep { ( $_->{playerid} // '' ) eq $client->id } @{ ( $rows || {} )->{rows} || [] };
-
-    $params->{hqp_status} = $mine ? Plugins::HQPlayerBridge::Settings::statusLines( $mine->{path} ) : [];
-
-    return;
 }
 
 1;
