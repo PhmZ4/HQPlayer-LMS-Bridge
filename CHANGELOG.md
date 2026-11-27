@@ -4,6 +4,19 @@ All notable changes to **HQPlayer Bridge** are recorded here. This file records
 what users receive: one entry per release published to `main`. Per-version
 development notes live in `CLAUDE.md`.
 
+## 1.4.0 — 2026-11-27
+
+### New
+
+- **GPU offload light in the live view.** A green light when HQPlayer is using
+  a graphics card for its processing, with the API, mode and card named (for
+  example *CUDA all - NVIDIA GeForce RTX 4070*); red when offload is not
+  enabled, or is enabled but no card is in use; grey when it cannot be known.
+  HQPlayer's control API does not report this, so the bridge reads it from
+  HQPlayer's own log on its web interface (port 8088), once each time it
+  connects to HQPlayer - every restart or settings change reconnects it. HQPlayer Desktop has no
+  such web interface, so the light stays grey there.
+
 ## 1.3.2 — 2026-11-19
 
 ### Fixes

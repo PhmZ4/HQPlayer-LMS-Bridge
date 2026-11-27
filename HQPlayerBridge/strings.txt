@@ -359,3 +359,19 @@ PLUGIN_HQPLAYER_BP_CHK_ROUTE_4N
 PLUGIN_HQPLAYER_BP_CHK_HTTPMODE
 	EN	Streaming mode for HTTP(S) is not "Normal streaming" (Settings - Advanced - Network): Qobuz and Tidal are relayed by Lyrion instead of fetched directly by HQPlayer. Still bit-perfect, but track joins are not pre-queued
 	FR	Le mode de streaming HTTP(S) n'est pas « Streaming normal » (Réglages - Avancé - Réseau) : Qobuz et Tidal sont relayés par Lyrion au lieu d'être récupérés directement par HQPlayer. Toujours bit-perfect, mais les enchaînements ne sont pas préchargés
+
+PLUGIN_HQPLAYER_GPU
+	EN	GPU offload
+	FR	Déchargement GPU
+
+PLUGIN_HQPLAYER_GPU_FAIL
+	EN	Requested, but no GPU in use
+	FR	Demandé, mais aucun GPU utilisé
+
+PLUGIN_HQPLAYER_GPU_OFF
+	EN	Not enabled
+	FR	Non activé
+
+PLUGIN_HQPLAYER_GPU_UNKNOWN
+	EN	Unknown - HQPlayer's log (port 8088) cannot be read
+	FR	Inconnu - journal d'HQPlayer (port 8088) illisible

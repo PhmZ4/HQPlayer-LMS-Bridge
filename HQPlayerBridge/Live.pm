@@ -127,6 +127,7 @@ sub _page {
         processing => cstring( $c, 'PLUGIN_HQPLAYER_PROCESSING' ),
         inbuf      => cstring( $c, 'PLUGIN_HQPLAYER_INBUF' ),
         outbuf     => cstring( $c, 'PLUGIN_HQPLAYER_OUTBUF' ),
+        gpu        => cstring( $c, 'PLUGIN_HQPLAYER_GPU' ),
         back       => cstring( $c, 'PLUGIN_HQPLAYER_LIVE_BACK' ),
         prev       => cstring( $c, 'PLUGIN_HQPLAYER_CTL_PREV' ),
         next       => cstring( $c, 'PLUGIN_HQPLAYER_CTL_NEXT' ),
@@ -317,6 +318,11 @@ h1 { font-size: clamp(16px, 1.3vw, 21px); margin: 0 0 2px; font-weight: 600; }
        background: var(--line); overflow: hidden; }
 .buf > i { display: block; height: 100%; background: var(--accent); }
 .buf.low > i { background: var(--bad); }
+/* GPU OFFLOAD (1.4.0) - a lamp: green when HQPlayer's log shows a GPU in
+   use, red when it is off or requested without a GPU, grey when unknown. */
+.lampv { display: flex; align-items: center; gap: 10px; }
+.lamp { flex: 0 0 auto; width: 12px; height: 12px; border-radius: 50%; background: var(--dim); }
+.lamp.ok { background: var(--ok); } .lamp.bad { background: var(--bad); }
 .bufn { flex: 0 0 auto; min-width: 3.5em; font-variant-numeric: tabular-nums; }
 .foot { color: var(--dim); font-size: 0.86em; display: flex; gap: 10px; align-items: center; }
 .top { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
@@ -506,6 +512,7 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border: 0;
         processing: "$L{processing}",
         inbuf:      "$L{inbuf}",
         outbuf:     "$L{outbuf}",
+        gpu:        "$L{gpu}",
         prev:       "$L{prev}",
         next:       "$L{next}",
         play:       "$L{play}",
@@ -541,6 +548,15 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border: 0;
         return '<div class="row"><div class="k">' + esc(k) + '</div>' +
                '<div class="v bufv"><div class="buf' + (low ? ' low' : '') + '"><i style="width:' + w + '%"></i></div>' +
                '<span class="bufn' + (low ? ' bad' : '') + '">' + esc(text) + '</span></div></div>';
+    }
+
+    // The GPU offload lamp: the colour from the server's STATE, the text beside
+    // it the server's finished string.
+    function lamp(k, text, state) {
+        if (text === undefined || text === null || text === '') return '';
+        var c = state === 'ok' ? ' ok' : (state === 'fail' || state === 'off') ? ' bad' : '';
+        return '<div class="row"><div class="k">' + esc(k) + '</div>' +
+               '<div class="v lampv"><span class="lamp' + c + '"></span><span>' + esc(text) + '</span></div></div>';
     }
 
     function row(k, v, cls) {
@@ -1105,6 +1121,7 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border: 0;
             html += row(L.processing, b.speed);
             html += bar(L.inbuf,  b.in_fill,  b.in_pct,  b.np_state === 'playing');
             html += bar(L.outbuf, b.out_fill, b.out_pct, b.np_state === 'playing');
+            html += lamp(L.gpu, b.gpu, b.gpu_state);
                 html += row('', b.tier);
                 html += '</div>';
             }

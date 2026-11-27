@@ -77,6 +77,7 @@ $prefs->init( { addresses => '', autodiscover => Plugins::HQPlayerBridge::Addres
 
 # id => { instance => {...}, control => $ctl, client => $client }
 my %bridges;
+sub _bridgesRef { return \%bridges }   # for the tests
 my %splitWarned;  # name => the addresses last reported as a same-named pair
 
 # ip => 1 once that host's restart helper answered; never shrinks in a run.
@@ -639,6 +640,129 @@ sub _decode {
 # glob assignment cannot reach.
 sub _now { return time() }
 
+# GPU OFFLOAD (1.4.0). The control API on 4321 says nothing about it (checked
+# against Signalyst's client 6.0.1: no field, no command). HQPlayer's own log
+# does, on its web interface at :8088/log, which needs no login. At every
+# engine start it writes, for example:
+#
+#   CUDA offload requested
+#   ROCm/HIP offload requested
+#   HQPlayer Engine version 6.3.3
+#   CUDA offload: all
+#   CUDA devices:
+#   	0: NVIDIA GeForce RTX 4070
+#
+# The "requested" lines are the configuration (cuda="1" in hqplayerd.xml); the
+# "offload: <mode>" line plus a device list is the engine actually using a GPU.
+# Only the NEWEST engine-start block is read, so an old start cannot speak for
+# the current one. The log is fetched ONCE PER PROVEN LINK and never again:
+# offload can only change when the engine starts, and every start (a restart,
+# a settings change) drops the link. The log can grow past 10 MB, so a
+# periodic re-read would only cost traffic.
+use constant OFFLOAD_PORT  => 8088;
+use constant OFFLOAD_DELAY => 3;      # let the engine finish writing its start block
+use constant OFFLOAD_TAIL  => 4_000_000;   # bytes of the log worth looking at
+
+sub _parseOffload {
+    my $text = shift;
+    return undef unless defined $text && length $text;
+
+    $text = substr( $text, -OFFLOAD_TAIL ) if length $text > OFFLOAD_TAIL;
+
+    # The web page may wrap the log in HTML; the facts are in the text.
+    $text =~ s/<br\s*\/?>/\n/gi;
+    $text =~ s/<[^>]*>//g;
+    $text =~ s/&lt;/</g; $text =~ s/&gt;/>/g; $text =~ s/&quot;/"/g;
+    $text =~ s/&#39;/'/g; $text =~ s/&amp;/&/g;
+
+    my @lines = split /\r?\n/, $text;
+
+    my $eng;
+    for my $i ( reverse 0 .. $#lines ) {
+        if ( $lines[$i] =~ /HQPlayer Engine version/ ) { $eng = $i; last }
+    }
+    return undef unless defined $eng;
+
+    # The block opens at the audio library line written just before the
+    # engine starts, or a short way back if this build writes none.
+    my $start = $eng > 60 ? $eng - 60 : 0;
+    for my $i ( reverse $start .. $eng ) {
+        if ( $lines[$i] =~ /asoundlib version|Server starting|configuration reloaded/ && $i < $eng ) {
+            $start = $i; last;
+        }
+    }
+    my $end = $eng + 120 > $#lines ? $#lines : $eng + 120;
+
+    my ( $requested, $api, $mode, @dev );
+    for my $i ( $start .. $end ) {
+        my $l = $lines[$i];
+        $requested = 1 if $l =~ /\b(?:CUDA|ROCm|HIP|Metal)\S*\s+offload requested/i;
+        if ( $l =~ /\b(CUDA|ROCm\/HIP|ROCm|HIP|Metal)\s+offload:\s*(\S+)/i ) {
+            ( $api, $mode ) = ( $1, $2 );
+        }
+        if ( $l =~ /\b(?:CUDA|ROCm\/HIP|ROCm|HIP|Metal)\s+devices:/i ) {
+            for my $j ( $i + 1 .. $end ) {
+                last unless $lines[$j] =~ /\d\d:\d\d:\d\d\s+(\d+):\s*(\S.*?)\s*$/;
+                push @dev, $2;
+            }
+        }
+    }
+
+    return { state => 'ok', api => $api, mode => $mode, devices => \@dev }
+        if $mode && $mode !~ /^(?:none|off|disabled|0)$/i && @dev;
+
+    return { state => 'fail', api => $api, mode => $mode, devices => \@dev }
+        if $requested || $mode;
+
+    return { state => 'off' };
+}
+
+sub _offloadTimer {
+    my $id = shift;
+    _readOffload($id);
+}
+
+sub _readOffload {
+    my $id = shift;
+    my $b  = $bridges{$id} or return;
+    my $ip = $b->{instance} && $b->{instance}->{ip} or return;
+    my $ctl = $b->{control};
+
+    my $done = sub {
+        my $res = shift;
+        my $now = $bridges{$id} or return;
+        return unless ( $now->{control} || 0 ) == ( $ctl || 0 );   # a newer bridge owns the id
+        $now->{gpu}   = $res || { state => 'unknown' };
+        $now->{gpuAt} = _now();
+        main::INFOLOG && $log->is_info
+            && $log->info( ( $now->{name} || $id ) . ": GPU offload " . $now->{gpu}->{state} );
+    };
+
+    Slim::Networking::SimpleAsyncHTTP->new(
+        sub { $done->( _parseOffload( eval { $_[0]->content } ) ) },
+        sub { $done->(undef) },      # no web interface (Desktop) or not reachable
+        { timeout => 5 },
+    )->get( "http://$ip:" . OFFLOAD_PORT . '/log' );
+
+    return;
+}
+
+sub offloadFor {
+    my ( $client, $b ) = @_;
+
+    my $g = $b->{gpu} or return ();
+
+    my $state = $g->{state};
+    my $text  = $state eq 'ok'
+        ? join( ' - ', grep { defined && length } join( ' ', grep { defined } $g->{api}, $g->{mode} ),
+                join( ', ', @{ $g->{devices} || [] } ) )
+        : $state eq 'fail' ? cstring( $client, 'PLUGIN_HQPLAYER_GPU_FAIL' )
+        : $state eq 'off'  ? cstring( $client, 'PLUGIN_HQPLAYER_GPU_OFF' )
+        :                    cstring( $client, 'PLUGIN_HQPLAYER_GPU_UNKNOWN' );
+
+    return ( gpu => $text, gpu_state => $state );
+}
+
 # At every link-up and whenever the Apps list is drawn, while the host is still
 # unknown - at most once per REPROBE_AFTER either way. A link-up is throttled
 # too: the link retries a refusing instance every 10s (Control::BACKOFF_MAX),
@@ -818,7 +942,8 @@ sub _signalPathQuery {
             if $b->{client};
 
         for my $k (qw( connected up source output filter shaper speed tier
-                       bitperfect gain converted in_fill in_pct out_fill out_pct )) {
+                       bitperfect gain converted in_fill in_pct out_fill out_pct
+                       gpu gpu_state )) {
             $request->addResultLoop( 'bridges_loop', $i, $k, $p->{$k} ) if defined $p->{$k};
         }
 
@@ -961,6 +1086,9 @@ sub signalPathFor {
 
     $out{converted} = Plugins::HQPlayerBridge::Player::tierConverts( $tier,
         $c->can('hqRelayNative') ? $c->hqRelayNative : 0 ) if $tier;
+
+    my %gpu = offloadFor( $client, $b );
+    @out{ keys %gpu } = values %gpu;
 
     return \%out;
 }
@@ -1708,6 +1836,10 @@ sub _onLinkProven {
     $client->disconnected(0);
     Slim::Control::Request::notifyFromArray( $client, [ 'client', 'reconnect' ] );
 
+    # GPU offload: read HQPlayer's log once the engine has written its start.
+    Slim::Utils::Timers::killTimers( $id, \&_offloadTimer );
+    Slim::Utils::Timers::setTimer( $id, Time::HiRes::time() + OFFLOAD_DELAY, \&_offloadTimer );
+
     # playerActive can run the whole _JumpToTime -> play() path when the group
     # is playing; a failure there is logged, not allowed to unwind the proof.
     my $controller = eval { $client->controller };
@@ -1723,6 +1855,8 @@ sub _teardown {
     my $id = shift;
 
     my $b = delete $bridges{$id} or return;
+
+    Slim::Utils::Timers::killTimers( $id, \&_offloadTimer );
 
     if ( my $ctl = $b->{control} ) {
         $ctl->close;
