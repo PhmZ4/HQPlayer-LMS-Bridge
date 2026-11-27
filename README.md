@@ -8,9 +8,9 @@ There is one **optional** helper, for a different job: restarting HQPlayer from 
 
 Tested on LMS 9.x against **HQPlayer Embedded 6** feeding an NAA endpoint.
 
-> **This is PhmZ4's fork** of [SimonArnold002/LMS-HQPlayer-Bridge](https://github.com/SimonArnold002/LMS-HQPlayer-Bridge), currently at version **1.3.2**, published as **HQPlayer-LMS-Bridge** to keep it apart from the original. It adds a [bit-perfect mode](#bit-perfect-mode), shows the **ReplayGain** setting on the player's Audio page, puts the [connection status](#connection-status) on the plugin's settings page, and shows HQPlayer's input and output buffers in the [live view](#seeing-what-its-doing). Everything else works as in the original. See [CHANGELOG.md](CHANGELOG.md).
+> **This is PhmZ4's fork** of [SimonArnold002/LMS-HQPlayer-Bridge](https://github.com/SimonArnold002/LMS-HQPlayer-Bridge), currently at version **1.4.0**, published as **HQPlayer-LMS-Bridge** to keep it apart from the original. It adds a [bit-perfect mode](#bit-perfect-mode), shows the **ReplayGain** setting on the player's Audio page, puts the [connection status](#connection-status) on the plugin's settings page, and shows HQPlayer's input and output buffers and its GPU offload in the [live view](#seeing-what-its-doing). Everything else works as in the original. See [CHANGELOG.md](CHANGELOG.md).
 
-### What's new in this fork (1.1.0 – 1.3.0)
+### What's new in this fork (1.1.0 – 1.4.0)
 
 - **A bit-perfect mode**, in *Player settings → HQPlayer*. While it is on there is no ReplayGain, no bitrate limit and no MP3 conversion; Lyrion's volume is set to fixed and HQPlayer is set to 0 dB, or to its own maximum volume if that is lower, again each time the bridge reconnects to it. An optional *Native files only* switch skips anything Lyrion would convert (ALAC/AAC/M4A, or a relayed stream it transcodes). Since 1.3.0, a Qobuz FLAC that Lyrion relays without conversion counts as native.
 - **A ✓/⚠ list** of every Lyrion setting that could alter the stream, and (1.1.1) whether Lyrion touched the last track played.
@@ -18,6 +18,7 @@ Tested on LMS 9.x against **HQPlayer Embedded 6** feeding an NAA endpoint.
 - **The connection status** of each HQPlayer in *Settings → Plugins → HQPlayer Bridge*.
 - (1.2.0) **HQPlayer's input and output buffers** in the live view.
 - (1.3.0) **A Qobuz or Tidal FLAC that Lyrion relays without conversion counts as native**, so it plays bit-perfect under *Native files only*.
+- (1.4.0) **A GPU offload light** in the live view: green when HQPlayer is using a graphics card, red when it is not.
 
 Every page of the plugin is also available in French.
 
@@ -43,7 +44,7 @@ Every page of the plugin is also available in French.
 | **Bit-perfect mode** | One switch per player: no ReplayGain, no bitrate limit, Lyrion volume fixed, HQPlayer set to 0 dB or its own maximum, again at every reconnection. See [Bit-perfect mode](#bit-perfect-mode) | Open **Player settings → HQPlayer**, set **Bit-perfect mode** to *On* and save. Optionally set **Native files only** too. Set HQPlayer's own volume and maximum the way you want them |
 | **What Lyrion could change** | A ✓/⚠ list of ReplayGain, bitrate limit, volume control and the route of the last track. See [What Lyrion could change](#what-lyrion-could-change) | Open **Player settings → HQPlayer**. Reload the page to refresh it |
 | **Connection status** | Each HQPlayer's link, output mode, filter, shaper, transport and route, with what the bridge is still waiting for | Open **Settings → Plugins → HQPlayer Bridge**. It is a snapshot: reload to refresh, or follow its link to the live view |
-| **Live view** | What's playing, transport, volume, the signal path and HQPlayer's **input and output buffers**, updating every second in your Material theme | Open **Apps → HQPlayer Bridge → HQPlayer Live View**, the link on either settings page, or `http://<your-LMS>:9000/hqplive` |
+| **Live view** | What's playing, transport, volume, the signal path, HQPlayer's **input and output buffers** and its **GPU offload**, updating every second in your Material theme | Open **Apps → HQPlayer Bridge → HQPlayer Live View**, the link on either settings page, or `http://<your-LMS>:9000/hqplive` |
 | **Restart HQPlayer from LMS** | One tap in Apps restarts HQPlayer, with your saved settings, e.g. after power-cycling your NAA endpoint | Install the optional restart helper on the HQPlayer machine (needs **Python 3.7+** there). See [Restarting HQPlayer from LMS](#restarting-hqplayer-from-lms-optional) |
 
 ---
@@ -309,9 +310,20 @@ Shaper             TPDF
 Processing speed   30.3x realtime
 Input buffer       [█████████░░░]  81 %
 Output buffer      [███████████░]  94 %
+GPU offload        ● CUDA all - NVIDIA GeForce RTX 4070
 ```
 
 **Input buffer** is how much HQPlayer has read ahead of its decoder, **Output buffer** how much is queued for the endpoint. A bar turns red below 15% while playing: a low input buffer points at the network or the source (Lyrion, the streaming service), a low output buffer at HQPlayer's processing or the link to the NAA. Stopped or paused, an empty buffer is normal.
+
+**GPU offload** shows whether HQPlayer runs part of its processing on a graphics card (CUDA on NVIDIA, ROCm/HIP on AMD). HQPlayer's control API does not report this, so the bridge reads HQPlayer's own log from its web interface (`http://<HQPlayer>:8088/log`, no login needed), each time it connects and every 5 minutes while the live view is open. It reads only the most recent engine start.
+
+| Light | Meaning |
+|---|---|
+| 🟢 green | HQPlayer is using a GPU. The line names the API, the mode and the card |
+| 🔴 red | *Not enabled*: no offload is set in HQPlayer. *Requested, but no GPU in use*: offload is set (`cuda="1"` in `hqplayerd.xml`) but HQPlayer found no usable card: check the driver |
+| ⚪ grey | The log cannot be read. HQPlayer Desktop has no web interface on port 8088, so the light stays grey there |
+
+To turn offload on in HQPlayer Embedded, set `cuda="1"` on the `engine` element of `/etc/hqplayer/hqplayerd.xml` and restart HQPlayer.
 
 **With more than one HQPlayer,** a row of names appears above the panel and you tap the one you want to see and control. **Auto**, the default, follows whichever instance is playing. Your choice is remembered in that browser, and a dot marks any instance that is playing but not currently shown. Every instance's signal path is listed below either way.
 

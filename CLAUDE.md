@@ -37,6 +37,16 @@ restores `hqRelayNative` with `hqTier`. Most common cause of Qobuz on tier 4: se
 (Persistent/Cache) - `HTTP::canDirectStream` returns 0 through `canEnhanceHTTP`. Shown on the player page as an
 info line (ok => 2), never a warning.
 
+**1.4.0 (PhmZ4 fork, 2026-11-27) - GPU offload light on the live page.** The 4321 control API has no GPU
+field or command (checked against the 6.0.1 client), so `Plugin::_readOffload` GETs `http://<ip>:8088/log`
+(no auth) and `_parseOffload` reads ONLY the newest `HQPlayer Engine version` block: `CUDA offload: <mode>` plus
+a `CUDA devices:` list = ok (green); `... offload requested` or an offload line with no device = fail (red);
+nothing = off (red); unreadable / no :8088 (Desktop) = unknown (grey). Format MEASURED on Philippe's Embedded
+6.3.3 log (RTX 4070), 2026-11-27. Fetched 3s after each proven link (`_offloadTimer`, killed in `_teardown`)
+and at most every 300s from the live page's `signalpath` poll (`_refreshOffload`) - never from the Apps feed
+or `signalPathFor`. This is NOT the 0.2.49 log reader coming back: that one fed the ReplayGain calculation,
+which stays verbatim; this one only feeds a display. Pinned in `t_offload.pl`.
+
 ### DECLINED / SETTLED INDEX — GREP THIS FIRST
 
 **One grep before reporting any finding.** Find the symbol or subject in this table, then grep
