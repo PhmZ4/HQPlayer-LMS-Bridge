@@ -1241,7 +1241,9 @@ print "-- one connected test: Player::connected, nowhere else --\n";
     my @inline = $src =~ /(\{client\}->connected)/g;
     is(scalar @inline, 1, 'a bridge\'s link is tested in ONE place (_linkUp), not inlined');
     my @users = $src =~ /(_linkUp\()/g;
-    is(scalar @users, 3, 'and _linkStateAt, _heldAddresses and the removal pass all call it');
+    # 1.4.x: the GPU offload read (_readOffload) asks it too, for an answer
+    # that lands after the link dropped.
+    is(scalar @users, 4, 'and _linkStateAt, _heldAddresses, the removal pass and the offload read all call it');
 }
 
 print "-- reconcile: a partial list must never remove a player --\n";

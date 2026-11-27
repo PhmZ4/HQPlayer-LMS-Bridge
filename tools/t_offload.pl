@@ -82,9 +82,16 @@ is( $P->($devless)->{state}, 'fail', 'offload line but no device: fail' );
 
 ok( !defined $P->("garbage\nno engine here\n"), 'no engine start: undef' );
 ok( !defined $P->(''), 'empty log: undef' );
+my $noise = "  2026/11/27 19:12:24 NAA output discovery from 0.0.0.0\n" x 150_000;   # ~8 MB, days of it
+is( ( $P->( $start . $noise ) || {} )->{state}, 'ok', 'an engine start far back in a long log is still found' );
+is( ( $P->( $start . $noise . $none ) || {} )->{state}, 'off', 'and the newest one still wins' );
 
 my $html = "<html><body><pre>" . join( "<br>", map { s/&/&amp;/gr } split /\n/, $start ) . "</pre></body></html>";
 is( $P->($html)->{state}, 'ok', 'an HTML-wrapped log parses the same' );
+is( join('|', @{ $P->($html)->{devices} }), 'NVIDIA GeForce RTX 4070', 'and names the same card' );
+my $rocm = $start; $rocm =~ s/CUDA offload: all/ROCm\/HIP offload: all/; $rocm =~ s/CUDA devices:/ROCm\/HIP devices:/;
+is( $P->($rocm)->{api}, 'ROCm/HIP', 'an AMD card is read the same way' );
+is( $P->($rocm)->{state}, 'ok', 'and is ok' );
 
 print "-- the fetch --\n";
 # Drive _readOffload through the package's %bridges via signalPathFor's helper.
@@ -122,6 +129,35 @@ Slim::Networking::SimpleAsyncHTTP::_reset();
     my ($lp) = $pl =~ /(sub _onLinkProven \{.*?\n\}\n)/s;
     ok( $lp && $lp =~ /setTimer\( \$id, .*\\&_offloadTimer/, 'a proven link schedules the read' );
 }
+print "-- a dropped link forgets the state --\n";
+{
+    package FakeLinkC;
+    our $up = 1;
+    sub connected { $up } sub _stopPolling {} sub disconnected {} sub linkDropped {} sub controller { undef }
+}
+{
+    no warnings 'once';
+    local *Plugins::HQPlayerBridge::Discovery::probeNow = sub {};
+    local *Slim::Control::Request::notifyFromArray = sub {};
+    my $c3 = bless {}, 'FakeLinkC';
+    my $b3 = { instance => { ip => '10.0.0.7' }, control => bless( {}, 'FakeCtl' ), client => $c3,
+               gpu => { state => 'ok', api => 'CUDA', mode => 'all', devices => ['X'] } };
+    Plugins::HQPlayerBridge::Plugin::_bridgesRef()->{z} = $b3;
+    Slim::Networking::SimpleAsyncHTTP::_reset();
+    Plugins::HQPlayerBridge::Plugin::_offloadTimer('z');      # a read in flight
+    Plugins::HQPlayerBridge::Plugin::_onLinkState( 'z', 0, 1 );
+    ok( !exists $b3->{gpu}, 'a proven link drop forgets the old GPU state' );
+    $FakeLinkC::up = 0;
+    $Slim::Networking::SimpleAsyncHTTP::REQ[0]{cb}->( bless { c => $start }, 'FakeRes' );
+    ok( !exists $b3->{gpu}, 'an answer landing after the drop is ignored' );
+    $FakeLinkC::up = 1;
+    Slim::Networking::SimpleAsyncHTTP::_reset();
+    Plugins::HQPlayerBridge::Plugin::_offloadTimer('z');
+    $Slim::Networking::SimpleAsyncHTTP::REQ[0]{cb}->( bless { c => $start }, 'FakeRes' );
+    is( ( $b3->{gpu} || {} )->{state}, 'ok', 'CONTROL: the next link reads it again' );
+    delete Plugins::HQPlayerBridge::Plugin::_bridgesRef()->{z};
+}
+
 print "-- the page --\n";
 my $src = do { local $/; open my $f, '<', '../HQPlayerBridge/Live.pm' or die; <$f> };
 ok( $src =~ /html \+= lamp\(L\.gpu, b\.gpu, b\.gpu_state\)/, 'the page draws the lamp' );

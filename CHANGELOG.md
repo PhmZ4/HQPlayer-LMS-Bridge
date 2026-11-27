@@ -4,6 +4,26 @@ All notable changes to **HQPlayer Bridge** are recorded here. This file records
 what users receive: one entry per release published to `main`. Per-version
 development notes live in `CLAUDE.md`.
 
+## 1.4.1 — 2026-11-27
+
+### Fixes
+
+- **The GPU offload light no longer goes grey after a long uptime.** The bridge
+  looked for HQPlayer's latest engine start only in the last 4 MB of its log.
+  With no network audio adapter found, HQPlayer writes about 2.4 MB of log a
+  day, so after Lyrion restarted under an HQPlayer running for a few days the
+  start was out of reach. It is now found anywhere in the log.
+- **The light no longer shows a stale state.** When the connection to HQPlayer
+  drops, the previous state is cleared, and an answer arriving after the drop is
+  ignored; the log is read again on the next connection.
+
+### Changes
+
+- **French is complete.** The 44 messages that were still English only (settings
+  page, Apps list, live view controls, restart) now have a French translation.
+- Internal: the log reader and the player page's check list are split into
+  smaller functions (lower complexity), with no change in behaviour.
+
 ## 1.4.0 — 2026-11-27
 
 ### New
