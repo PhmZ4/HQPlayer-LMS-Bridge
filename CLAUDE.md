@@ -42,9 +42,9 @@ field or command (checked against the 6.0.1 client), so `Plugin::_readOffload` G
 (no auth) and `_parseOffload` reads ONLY the newest `HQPlayer Engine version` block: `CUDA offload: <mode>` plus
 a `CUDA devices:` list = ok (green); `... offload requested` or an offload line with no device = fail (red);
 nothing = off (red); unreadable / no :8088 (Desktop) = unknown (grey). Format MEASURED on Philippe's Embedded
-6.3.3 log (RTX 4070), 2026-11-27. Fetched 3s after each proven link (`_offloadTimer`, killed in `_teardown`)
-and at most every 300s from the live page's `signalpath` poll (`_refreshOffload`) - never from the Apps feed
-or `signalPathFor`. This is NOT the 0.2.49 log reader coming back: that one fed the ReplayGain calculation,
+6.3.3 log (RTX 4070), 2026-11-27. Fetched ONCE, 3s after each proven link (`_offloadTimer`, killed in `_teardown`) - never from the live poll,
+the Apps feed or `signalPathFor` (Philippe's call: offload changes only at an engine start, every start drops
+the link, and the log can pass 10 MB). This is NOT the 0.2.49 log reader coming back: that one fed the ReplayGain calculation,
 which stays verbatim; this one only feeds a display. Pinned in `t_offload.pl`.
 
 ### DECLINED / SETTLED INDEX — GREP THIS FIRST

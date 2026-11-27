@@ -13,8 +13,8 @@ development notes live in `CLAUDE.md`.
   example *CUDA all - NVIDIA GeForce RTX 4070*); red when offload is not
   enabled, or is enabled but no card is in use; grey when it cannot be known.
   HQPlayer's control API does not report this, so the bridge reads it from
-  HQPlayer's own log on its web interface (port 8088), once per connection and
-  at most every 5 minutes while the live view is open. HQPlayer Desktop has no
+  HQPlayer's own log on its web interface (port 8088), once each time it
+  connects to HQPlayer - every restart or settings change reconnects it. HQPlayer Desktop has no
   such web interface, so the light stays grey there.
 
 ## 1.3.2 — 2026-11-19

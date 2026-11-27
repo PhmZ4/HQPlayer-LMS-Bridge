@@ -94,13 +94,11 @@ print "-- the fetch --\n";
 Slim::Networking::SimpleAsyncHTTP::_reset();
 my $b = { instance => { ip => '10.0.0.9' }, control => bless( {}, 'FakeCtl' ), client => bless( {}, 'FakeC' ) };
 Plugins::HQPlayerBridge::Plugin::_bridgesRef()->{x} = $b;
-Plugins::HQPlayerBridge::Plugin::_refreshOffload('x');
+Plugins::HQPlayerBridge::Plugin::_offloadTimer('x');
 my %g = Plugins::HQPlayerBridge::Plugin::offloadFor( undef, $b );
-is( scalar @Slim::Networking::SimpleAsyncHTTP::REQ, 1, 'the live poll asks for the log once' );
+is( scalar @Slim::Networking::SimpleAsyncHTTP::REQ, 1, 'a proven link asks for the log once' );
 is( $Slim::Networking::SimpleAsyncHTTP::REQ[0]{url}, 'http://10.0.0.9:8088/log', 'at :8088/log' );
 ok( !%g, 'nothing shown before the answer' );
-Plugins::HQPlayerBridge::Plugin::_refreshOffload('x');
-is( scalar @Slim::Networking::SimpleAsyncHTTP::REQ, 1, 'not again on the next poll' );
 
 { package FakeRes; sub content { $_[0]{c} } }
 $Slim::Networking::SimpleAsyncHTTP::REQ[0]{cb}->( bless { c => $start }, 'FakeRes' );
@@ -117,15 +115,13 @@ Slim::Networking::SimpleAsyncHTTP::_reset();
     my $pl = do { local $/; open my $f, '<', '../HQPlayerBridge/Plugin.pm' or die; <$f> };
     my ($sp) = $pl =~ /(sub signalPathFor \{.*?\n\}\n)/s;
     my ($tl) = $pl =~ /(sub topLevel \{.*?\n\}\n)/s;
-    ok( $sp && $sp !~ /_(?:read|refresh)Offload/, 'signalPathFor never fetches' );
-    ok( $tl && $tl !~ /_(?:read|refresh)Offload/, 'the Apps feed never fetches' );
+    my ($sq) = $pl =~ /(sub _signalPathQuery \{.*?\n\}\n)/s;
+    ok( $sp && $sp !~ /_readOffload|_offloadTimer/, 'signalPathFor never fetches' );
+    ok( $tl && $tl !~ /_readOffload|_offloadTimer/, 'the Apps feed never fetches' );
+    ok( $sq && $sq !~ /_readOffload|_offloadTimer/, 'the live poll never fetches - only a proven link does' );
+    my ($lp) = $pl =~ /(sub _onLinkProven \{.*?\n\}\n)/s;
+    ok( $lp && $lp =~ /setTimer\( \$id, .*\\&_offloadTimer/, 'a proven link schedules the read' );
 }
-{ package FakeOff; sub connected { 0 } }
-my $b2 = { instance => { ip => '10.0.0.8' }, control => bless( {}, 'FakeCtl' ), client => bless( {}, 'FakeOff' ) };
-Plugins::HQPlayerBridge::Plugin::_bridgesRef()->{y} = $b2;
-Plugins::HQPlayerBridge::Plugin::_refreshOffload('y');
-is( scalar @Slim::Networking::SimpleAsyncHTTP::REQ, 0, 'a disconnected player is not asked' );
-
 print "-- the page --\n";
 my $src = do { local $/; open my $f, '<', '../HQPlayerBridge/Live.pm' or die; <$f> };
 ok( $src =~ /html \+= lamp\(L\.gpu, b\.gpu, b\.gpu_state\)/, 'the page draws the lamp' );

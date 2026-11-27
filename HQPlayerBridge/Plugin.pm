@@ -655,12 +655,12 @@ sub _now { return time() }
 # The "requested" lines are the configuration (cuda="1" in hqplayerd.xml); the
 # "offload: <mode>" line plus a device list is the engine actually using a GPU.
 # Only the NEWEST engine-start block is read, so an old start cannot speak for
-# the current one. The log is fetched once per proven link (a restart or a
-# settings change always drops the link) and again at most every
-# OFFLOAD_STALE seconds while the live page asks - never per poll.
+# the current one. The log is fetched ONCE PER PROVEN LINK and never again:
+# offload can only change when the engine starts, and every start (a restart,
+# a settings change) drops the link. The log can grow past 10 MB, so a
+# periodic re-read would only cost traffic.
 use constant OFFLOAD_PORT  => 8088;
 use constant OFFLOAD_DELAY => 3;      # let the engine finish writing its start block
-use constant OFFLOAD_STALE => 300;
 use constant OFFLOAD_TAIL  => 4_000_000;   # bytes of the log worth looking at
 
 sub _parseOffload {
@@ -728,8 +728,6 @@ sub _readOffload {
     my $ip = $b->{instance} && $b->{instance}->{ip} or return;
     my $ctl = $b->{control};
 
-    $b->{gpuAsked} = _now();
-
     my $done = sub {
         my $res = shift;
         my $now = $bridges{$id} or return;
@@ -747,17 +745,6 @@ sub _readOffload {
     )->get( "http://$ip:" . OFFLOAD_PORT . '/log' );
 
     return;
-}
-
-# The live page's poll keeps it fresh: at most once per OFFLOAD_STALE, and only
-# for a connected player. The Apps feed never asks (a snapshot needs no fetch).
-sub _refreshOffload {
-    my $id = shift;
-    my $b  = $bridges{$id} or return;
-    my $c  = $b->{client};
-    return unless $c && $c->connected;
-    return if _now() - ( $b->{gpuAsked} || 0 ) < OFFLOAD_STALE;
-    _readOffload($id);
 }
 
 sub offloadFor {
@@ -940,7 +927,6 @@ sub _signalPathQuery {
 
     for my $id ( sort keys %bridges ) {
         my $b = $bridges{$id} or next;
-        _refreshOffload($id);
         my $p = signalPathFor( $client, $b );
 
         $request->addResultLoop( 'bridges_loop', $i, 'id', $id );

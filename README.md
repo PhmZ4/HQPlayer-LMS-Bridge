@@ -315,7 +315,7 @@ GPU offload        ● CUDA all - NVIDIA GeForce RTX 4070
 
 **Input buffer** is how much HQPlayer has read ahead of its decoder, **Output buffer** how much is queued for the endpoint. A bar turns red below 15% while playing: a low input buffer points at the network or the source (Lyrion, the streaming service), a low output buffer at HQPlayer's processing or the link to the NAA. Stopped or paused, an empty buffer is normal.
 
-**GPU offload** shows whether HQPlayer runs part of its processing on a graphics card (CUDA on NVIDIA, ROCm/HIP on AMD). HQPlayer's control API does not report this, so the bridge reads HQPlayer's own log from its web interface (`http://<HQPlayer>:8088/log`, no login needed), each time it connects and every 5 minutes while the live view is open. It reads only the most recent engine start.
+**GPU offload** shows whether HQPlayer runs part of its processing on a graphics card (CUDA on NVIDIA, ROCm/HIP on AMD). HQPlayer's control API does not report this, so the bridge reads HQPlayer's own log from its web interface (`http://<HQPlayer>:8088/log`, no login needed), once each time the bridge connects to HQPlayer: offload can only change when HQPlayer's engine starts, and every start (a restart, a settings change) reconnects the bridge. It reads only the most recent engine start.
 
 | Light | Meaning |
 |---|---|
